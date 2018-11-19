@@ -38,3 +38,5 @@ cmake-build-debug
 
 # IDEA bullshit
 .idea/workspace.xml
+
+./data/*.csv
