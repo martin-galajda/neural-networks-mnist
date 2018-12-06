@@ -11,58 +11,57 @@
 #include "../neural_network/MiniBatchOptimizer.h"
 #include "../neural_network/MomentumOptimizer.h"
 #include "../initializers/XavierInitializer.h"
-#include "Matrix.cpp"
 #include <cmath>
 #include <random>
 
-
-double computeAccuracy(
-        std::shared_ptr<Matrix<double>> &inputs,
-        std::vector<std::shared_ptr<Matrix<double>>> &instances,
-        std::shared_ptr<Matrix<double>> &expectedOutputs,
-        std::vector<std::shared_ptr<Matrix<double>>> &labels,
-        ComputationalGraph &graph,
-        const int &BATCH_SIZE,
-        std::vector<int> &indicesPool
-) {
-    auto t_start = std::chrono::high_resolution_clock::now();
-    const int NUM_OF_INSTANCES = indicesPool.size();
-
-    std::vector<int> instanceIndexes;
-    instanceIndexes.reserve(BATCH_SIZE);
-
-    auto matchedPrediction = 0.0;
-
-    for (auto i = 0; i < NUM_OF_INSTANCES - BATCH_SIZE; i += BATCH_SIZE) {
-        instanceIndexes.clear();
-        instanceIndexes.reserve(BATCH_SIZE);
-        for (auto j = i; j < i + BATCH_SIZE && j < NUM_OF_INSTANCES; j++) {
-            instanceIndexes.push_back(indicesPool[j]);
-        }
-
-        populatePlaceholders(inputs, instances, instanceIndexes);
-        populatePlaceholders(expectedOutputs, labels, instanceIndexes);
-
-        auto s = graph.forwardPass(inputs);
-
-        auto predictedValues = s->argMaxByRow();
-        auto expectedValues = expectedOutputs->argMaxByRow();
-
-        for (auto row = 0; row < predictedValues->getNumOfRows(); row++) {
-            if ((*predictedValues)[row][0] == (*expectedValues)[row][0]) {
-                matchedPrediction++;
-            }
-        }
-    }
-
-    std::cout << "Accuracy: "
-        << ((matchedPrediction * 1.0) / NUM_OF_INSTANCES)
-        << std::endl;
-
-    auto t_end = std::chrono::high_resolution_clock::now();
-    auto secondsPassed = std::chrono::duration<double>(t_end-t_start).count();
-    return secondsPassed;
-}
+//
+//double computeAccuracy(
+//        std::shared_ptr<Matrix<double>> &inputs,
+//        std::vector<std::shared_ptr<Matrix<double>>> &instances,
+//        std::shared_ptr<Matrix<double>> &expectedOutputs,
+//        std::vector<std::shared_ptr<Matrix<double>>> &labels,
+//        ComputationalGraph &graph,
+//        const int &BATCH_SIZE,
+//        std::vector<int> &indicesPool
+//) {
+//    auto t_start = std::chrono::high_resolution_clock::now();
+//    const int NUM_OF_INSTANCES = indicesPool.size();
+//
+//    std::vector<int> instanceIndexes;
+//    instanceIndexes.reserve(BATCH_SIZE);
+//
+//    auto matchedPrediction = 0.0;
+//
+//    for (auto i = 0; i < NUM_OF_INSTANCES - BATCH_SIZE; i += BATCH_SIZE) {
+//        instanceIndexes.clear();
+//        instanceIndexes.reserve(BATCH_SIZE);
+//        for (auto j = i; j < i + BATCH_SIZE && j < NUM_OF_INSTANCES; j++) {
+//            instanceIndexes.push_back(indicesPool[j]);
+//        }
+//
+//        populatePlaceholders(inputs, instances, instanceIndexes);
+//        populatePlaceholders(expectedOutputs, labels, instanceIndexes);
+//
+//        auto s = graph.forwardPass(inputs);
+//
+//        auto predictedValues = s->argMaxByRow();
+//        auto expectedValues = expectedOutputs->argMaxByRow();
+//
+//        for (auto row = 0; row < predictedValues->getNumOfRows(); row++) {
+//            if ((*predictedValues)[row][0] == (*expectedValues)[row][0]) {
+//                matchedPrediction++;
+//            }
+//        }
+//    }
+//
+//    std::cout << "Accuracy: "
+//        << ((matchedPrediction * 1.0) / NUM_OF_INSTANCES)
+//        << std::endl;
+//
+//    auto t_end = std::chrono::high_resolution_clock::now();
+//    auto secondsPassed = std::chrono::duration<double>(t_end-t_start).count();
+//    return secondsPassed;
+//}
 
 TEST(mnist, solution1)
 {
@@ -93,30 +92,30 @@ TEST(mnist, solution1)
     ComputationalGraph computationalGraph;
 
     // First layer - hidden
-    computationalGraph.addLayer(
+    computationalGraph.addDenseLayer(
             {
-                    { "width", INPUT_DIMENSIONS },
-                    { "height", L1_NUM_OF_NEURONS },
-                    { "batchSize", BATCH_SIZE }
+                    {"width",     INPUT_DIMENSIONS},
+                    {"height",    L1_NUM_OF_NEURONS},
+                    {"batchSize", BATCH_SIZE}
             },
             initializer,
             ActivationFunction::relu);
 
     // Second layer - hidden
-    computationalGraph.addLayer(
+    computationalGraph.addDenseLayer(
             {
-                    { "width", L1_NUM_OF_NEURONS },
-                    { "height", L2_NUM_OF_NEURONS },
-                    { "batchSize", BATCH_SIZE }
+                    {"width",     L1_NUM_OF_NEURONS},
+                    {"height",    L2_NUM_OF_NEURONS},
+                    {"batchSize", BATCH_SIZE}
             },
             initializer2,
             ActivationFunction::relu);
 
-    computationalGraph.addLayer(
+    computationalGraph.addDenseLayer(
             {
-                    { "width", L2_NUM_OF_NEURONS },
-                    { "height", OUTPUT_CLASSES },
-                    { "batchSize", BATCH_SIZE }
+                    {"width",     L2_NUM_OF_NEURONS},
+                    {"height",    OUTPUT_CLASSES},
+                    {"batchSize", BATCH_SIZE}
             },
             initializer4,
             ActivationFunction::softmax);
@@ -145,15 +144,15 @@ TEST(mnist, solution1)
 
         for (auto &stageElement: stageAlreadyLogged) {
             if (secondsPassed > stageElement.first && !stageElement.second) {
-                secondsComputingAccuracy += computeAccuracy(
-                        inputs,
-                        all_instances,
-                        expectedOutputs,
-                        all_labels,
-                        computationalGraph,
-                        BATCH_SIZE,
-                        validation_indices
-                );
+//                secondsComputingAccuracy += computeAccuracy(
+//                        inputs,
+//                        all_instances,
+//                        expectedOutputs,
+//                        all_labels,
+//                        computationalGraph,
+//                        BATCH_SIZE,
+//                        validation_indices
+//                );
 
                 std::cout << "Seconds passed: " << secondsPassed << std::endl;
                 std::cout << std::endl << "Processed examples: " << batch * BATCH_SIZE << std::endl;
@@ -170,26 +169,26 @@ TEST(mnist, solution1)
     std::cout << std::endl << "Validation computing (s): " << secondsComputingAccuracy << std::endl;
 
     std::cout << "Validation ";
-    computeAccuracy(
-            inputs,
-            all_instances,
-            expectedOutputs,
-            all_labels,
-            computationalGraph,
-            BATCH_SIZE,
-            validation_indices
-    );
-
-    std::cout << "Train ";
-    computeAccuracy(
-            inputs,
-            all_instances,
-            expectedOutputs,
-            all_labels,
-            computationalGraph,
-            BATCH_SIZE,
-            training_indices
-    );
+//    computeAccuracy(
+//            inputs,
+//            all_instances,
+//            expectedOutputs,
+//            all_labels,
+//            computationalGraph,
+//            BATCH_SIZE,
+//            validation_indices
+//    );
+//
+//    std::cout << "Train ";
+//    computeAccuracy(
+//            inputs,
+//            all_instances,
+//            expectedOutputs,
+//            all_labels,
+//            computationalGraph,
+//            BATCH_SIZE,
+//            training_indices
+//    );
 
 }
 
@@ -239,11 +238,11 @@ TEST(mnist, solution2)
         auto config = denseLayerConfigMap[i];
         auto initializer = new XavierInitializer(config["width"],config["height"]);
 
-        computationalGraph.addLayer(
+        computationalGraph.addDenseLayer(
                 {
-                        { "width", config["width"] },
-                        { "height", config["height"] },
-                        { "batchSize", BATCH_SIZE }
+                        {"width",     config["width"]},
+                        {"height",    config["height"]},
+                        {"batchSize", BATCH_SIZE}
                 },
                 initializer,
                 ActivationFunction::relu);
@@ -252,11 +251,11 @@ TEST(mnist, solution2)
     }
 
     // Output layer - output
-    computationalGraph.addLayer(
+    computationalGraph.addDenseLayer(
             {
-                    { "width", L6_NUM_OF_NEURONS },
-                    { "height", OUTPUT_CLASSES },
-                    { "batchSize", BATCH_SIZE }
+                    {"width",     L6_NUM_OF_NEURONS},
+                    {"height",    OUTPUT_CLASSES},
+                    {"batchSize", BATCH_SIZE}
             },
             initializerOutput,
             ActivationFunction::softmax);
@@ -299,15 +298,15 @@ TEST(mnist, solution2)
 
         for (auto &stageElement: stageAlreadyLogged) {
             if (secondsPassed > stageElement.first && !stageElement.second) {
-                secondsComputingAccuracy += computeAccuracy(
-                        inputs,
-                        all_instances,
-                        expectedOutputs,
-                        all_labels,
-                        computationalGraph,
-                        BATCH_SIZE,
-                        validation_indices
-                );
+//                secondsComputingAccuracy += computeAccuracy(
+//                        inputs,
+//                        all_instances,
+//                        expectedOutputs,
+//                        all_labels,
+//                        computationalGraph,
+//                        BATCH_SIZE,
+//                        validation_indices
+//                );
 
                 std::cout << "Seconds passed: " << secondsPassed << std::endl;
 
@@ -322,27 +321,27 @@ TEST(mnist, solution2)
     std::cout << std::endl << "Processed examples: " << batch * BATCH_SIZE << std::endl;
     std::cout << std::endl << "Validation computing (s): " << secondsComputingAccuracy << std::endl;
 
-    std::cout << "Validation ";
-    computeAccuracy(
-            inputs,
-            all_instances,
-            expectedOutputs,
-            all_labels,
-            computationalGraph,
-            BATCH_SIZE,
-            validation_indices
-    );
-
-    std::cout << "Train ";
-    computeAccuracy(
-            inputs,
-            all_instances,
-            expectedOutputs,
-            all_labels,
-            computationalGraph,
-            BATCH_SIZE,
-            training_indices
-    );
+//    std::cout << "Validation ";
+//    computeAccuracy(
+//            inputs,
+//            all_instances,
+//            expectedOutputs,
+//            all_labels,
+//            computationalGraph,
+//            BATCH_SIZE,
+//            validation_indices
+//    );
+//
+//    std::cout << "Train ";
+//    computeAccuracy(
+//            inputs,
+//            all_instances,
+//            expectedOutputs,
+//            all_labels,
+//            computationalGraph,
+//            BATCH_SIZE,
+//            training_indices
+//    );
 
 
     free(initializerOutput);

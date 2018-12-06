@@ -1,39 +1,48 @@
 //
 // Created by Martin Galajda on 28/10/2018.
 //
-#define _GLIBCXX_USE_CXX11_ABI 0
 
 #include <list>
-#include <DenseLayer.h>
+#include <BaseLayer.h>
 #include <memory>
 #include <map>
 
-#ifndef MATRIXBENCHMARKS_COMPUTATIONALGRAPH_H
-#define MATRIXBENCHMARKS_COMPUTATIONALGRAPH_H
+#ifndef NEURAL_NETWORKS_COMPUTATIONALGRAPH_H
+#define NEURAL_NETWORKS_COMPUTATIONALGRAPH_H
 
 
 class ComputationalGraph {
 public:
+    ComputationalGraph(int inputSizeRows, int inputSizeCols, int outputSize);
     ComputationalGraph();
 
     ComputationalGraph & operator=(const ComputationalGraph&) = delete;
     ComputationalGraph(const ComputationalGraph&) = delete;
 
-    void addLayer(std::shared_ptr<DenseLayer> layer);
+    void addLayer(BaseLayer *layer);
 
-    void addLayer(std::map<std::string, int> layerSizeDefinition, BaseInitializer *initializer, ActivationFunction activationFunction, double = 0.0);
+    void addDenseLayer(std::map<std::string, int> layerSizeDefinition, BaseInitializer *initializer,
+                       ActivationFunction activationFunction, double = 0.0, std::string name = "DenseLayer");
+    void addDenseLayer(int, int, int, BaseInitializer *initializer,
+                       ActivationFunction activationFunction, double = 0.0, std::string name = "DenseLayer");
     std::shared_ptr<Matrix<double>> forwardPass(std::shared_ptr<Matrix<double>> input);
 
-    void backwardPass(std::shared_ptr<Matrix<double>> lossDerivatives);
+    MatrixDoubleSharedPtr backwardPass(std::shared_ptr<Matrix<double>> lossDerivatives);
+
+    int getInputSizeRows() { return this->inputSizeRows; }
+    int getInputSizeCols() { return this->inputSizeCols; }
+    int getOutputSize() { return this->outputSize; }
 
     void learn();
     void learn(double);
 
-    std::list<std::shared_ptr<DenseLayer>> &getLayers() { return layers; }
+    std::list<BaseLayer *> &getLayers() { return layers; }
 protected:
-
-    std::list<std::shared_ptr<DenseLayer>> layers;
+    int inputSizeRows = 0;
+    int inputSizeCols = 0;
+    int outputSize = 0;
+    std::list<BaseLayer *> layers;
 };
 
 
-#endif //MATRIXBENCHMARKS_COMPUTATIONALGRAPH_H
+#endif //NEURAL_NETWORKS_COMPUTATIONALGRAPH_H

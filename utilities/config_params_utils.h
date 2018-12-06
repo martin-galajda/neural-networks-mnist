@@ -1,7 +1,6 @@
 //
 // Created by Martin Galajda on 01/11/2018.
 //
-#define _GLIBCXX_USE_CXX11_ABI 0
 
 
 #include <sstream>

@@ -12,7 +12,7 @@ This is implementation of neural networks for solving MNIST dataset in C++ witho
 
 
 # Plans for future
-- convolutional layers
-- pooling layers
+- ~~convolutional layers~~
+- ~~pooling layers~~
 - batch normalization
 - improve design & usability, make it more generic

@@ -110,21 +110,6 @@ std::map<std::string, double> performTraining(
     auto currLearningRate = learningRateStart;
     int batch = 0;
 
-//    std::map<std::string, int> generalConfig = {
-//            { "learningRateStrategy", generalConfigEnums::LearningRateStrategy ::constantDecay },
-//            { "initializer", generalConfigEnums::Initializer ::xavier},
-//            { "optimizer", generalConfigEnums::Optimizer ::momentum}
-//    };
-//    std::map<std::string, double> generalCoeffConfig = {
-//            { "maxTrainTimeMinutes", 60.0 },
-//            { "batchSize", BATCH_SIZE },
-//            { "l2reg" , l2rate },
-//            { "learningRateStart", learningRate },
-//            { "learningRateEnd", learningRateEnd },
-//            { "learningRate", learningRate }
-//    };
-
-
     const double l2rate = generalCoeffConfig["l2reg"];
 
     BaseInitializer *initializer;
@@ -183,26 +168,6 @@ std::map<std::string, double> performTraining(
     }
     auto &optimizer = *optimizerPtr;
 
-    std::map<double, bool > stageAlreadyLogged = {
-            { 60*0.5, false },
-            { 60*1.0, false },
-            { 60*1.5, false },
-            { 60*3.0, false },
-            { 60*5.0, false },
-            { 60*7.5, false },
-            { 60*10.0, false },
-            { 60*12.5, false },
-            { 60*15.0, false },
-            { 60*17.5, false },
-            { 60*20.0, false },
-            { 60*22.5, false },
-            { 60*30.5, false },
-            { 60*35.5, false },
-            { 60*40.5, false },
-            { 60*45.5, false },
-            { 60*50.5, false },
-    };
-
     for (batch = 0; secondsPassed < (60 * generalCoeffConfig["maxTrainTimeMinutes"]); batch++) {
         optimizerPtr->train();
 
@@ -211,28 +176,6 @@ std::map<std::string, double> performTraining(
         }
         currLearningRate = std::max(currLearningRate, learningRateEnd);
         optimizerPtr->setLearningRate(currLearningRate);
-
-        for (auto &stageElement: stageAlreadyLogged) {
-            if (secondsPassed > stageElement.first && !stageElement.second) {
-                std::cout << std::endl;
-
-                secondsComputingAccuracy += computeAccuracy(
-                        inputs,
-                        all_instances,
-                        expectedOutputs,
-                        all_labels,
-                        computationalGraph,
-                        BATCH_SIZE,
-                        validation_indices
-                )["secondsPassed"];
-
-                std::cout << "Seconds passed: " << secondsPassed << std::endl;
-                std::cout << "Processed examples: " << batch * BATCH_SIZE << std::endl;
-
-                stageElement.second = true;
-            }
-        }
-
 
         secondsPassed = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - t_start).count() - secondsComputingAccuracy;
     }
@@ -274,186 +217,6 @@ std::map<std::string, double> performTraining(
             { "trainAccuracy", trainAccuracy },
     };
 }
-//
-//std::map<std::string, double> makeCoeffConfig(
-//        std::map<int, int> &generalConfig,
-//        double maxTrainTimeInMinutes,
-//        double maxLearningRate,
-//        double minLearningRate,
-//        double maxL2,
-//        double minL2,
-//        int maxBatchSize,
-//        int minBatchSize
-//) {
-//    std::map<std::string, double> generalCoeffConfig;
-//
-//    std::mt19937 rng(randomDevice());    // random-number engine used (Mersenne-Twister in this case)
-//    std::uniform_int_distribution<int> pickRandomInt(0, 1); // guaranteed unbiased
-//    std::uniform_int_distribution<double> pickRandomDouble(0, 1); // guaranteed unbiased
-//
-//    std::uniform_int_distribution<double> pickRandomLearningRate(minLearningRate, maxLearningRate); // guaranteed unbiased
-//    std::uniform_int_distribution<double> pickRandomL2Coeff(minL2, maxL2); // guaranteed unbiased
-//    std::uniform_int_distribution<int> pickRandomBatchSize(minBatchSize, maxBatchSize); // guaranteed unbiased
-//
-//    if (generalConfig[generalConfigEnums::ConfigType::learningRateStrategy] == generalConfigEnums::constantDecay) {
-//        std::uniform_int_distribution<double> pickRandomLearningRate(minLearningRate, maxLearningRate); // guaranteed unbiased
-//        generalCoeffConfig["learningRate"] = pickRandomLearningRate(randomDevice);
-//    } else {
-//        std::uniform_int_distribution<double> pickRandomLearningRate(minLearningRate, maxLearningRate); // guaranteed unbiased
-//        auto learningRateOne =  pickRandomLearningRate(randomDevice);
-//        auto learningRateTwo =  pickRandomLearningRate(randomDevice);
-//        generalCoeffConfig["learningRateStart"] = std::max(learningRateOne, learningRateTwo);
-//        generalCoeffConfig["learningRateEnd"] = std::min(learningRateOne, learningRateTwo);
-//        generalCoeffConfig["learningRateDecayAfterEpochs"] = 4;
-//    }
-//
-//    generalCoeffConfig["maxTrainTimeMinutes"] = maxTrainTimeInMinutes;
-//    generalCoeffConfig["batchSize"] = pickRandomBatchSize(randomDevice);
-//    generalCoeffConfig["l2reg"] = pickRandomL2Coeff(randomDevice);
-//
-//    return generalCoeffConfig;
-//}
-//
-//std::map<int, std::map<std::string, int>> makeDenseLayerConfig(
-//    int MIN_NUMBER_OF_LAYERS,
-//    int MAX_NUMBER_OF_LAYERS,
-//    int MIN_NEURONS_LAYER,
-//    int MAX_NEURONS_LAYER,
-//    std::map<int, int> &generalConfig
-//) {
-//    std::uniform_int_distribution<int> pickRandomNumberOfLayers(MIN_NUMBER_OF_LAYERS, MAX_NUMBER_OF_LAYERS); // guaranteed unbiased
-//    std::uniform_int_distribution<int> pickRandomNumberOfNeurons(MIN_NEURONS_LAYER, MAX_NEURONS_LAYER); // guaranteed unbiased
-//
-//    auto numberOfLayers = pickRandomNumberOfLayers(randomDevice);
-//    std::map<int, std::map<std::string, int>> denseLayerConfigMap;
-//
-//    auto lastLayerHeight = generalConfig[generalConfigEnums::ConfigType::inputDimensions];
-//    for (auto i = 1; i < numberOfLayers; i++) {
-//        auto layerWidth = lastLayerHeight;
-//        auto layerHeight = pickRandomNumberOfNeurons(randomDevice);
-//
-//        denseLayerConfigMap[i] = { {"width", layerWidth}, {"height", layerHeight}};
-//        lastLayerHeight = layerHeight;
-//    }
-//
-//    denseLayerConfigMap[numberOfLayers] = {
-//            {"width", lastLayerHeight},
-//            {"height", generalConfig[generalConfigEnums::ConfigType::outputDimensions]},
-//            {"activation", ActivationFunction ::softmax},
-//            {"l2reg", 0 }
-//    };
-//
-//////    auto lastLayerHeight = generalConfig[generalConfigEnums::ConfigType::outputDimensions];
-////
-////    std::map<int, std::map<std::string, int>> denseLayerConfigMap = {
-////            { 1, {{ "width", INPUT_DIMENSIONS  }, { "height", L1_NUM_OF_NEURONS }}},
-////            { 2, {{ "width", L1_NUM_OF_NEURONS }, { "height", L2_NUM_OF_NEURONS }}},
-////            { 3, {{ "width", L2_NUM_OF_NEURONS }, { "height", L3_NUM_OF_NEURONS }}},
-//////            { 4, {{ "width", L3_NUM_OF_NEURONS }, { "height", L4_NUM_OF_NEURONS }}},
-////            { 4, {{ "width", L3_NUM_OF_NEURONS }, { "height", OUTPUT_CLASSES }, {"activation", ActivationFunction ::softmax}, {"l2reg", 0 }}}
-////    };
-//
-//    return denseLayerConfigMap;
-//}
-//
-//
-//std::map<int, int> makeGeneralConfig(
-//        std::vector<std::shared_ptr<Matrix<double>>> &all_instances,
-//        std::vector<std::shared_ptr<Matrix<double>>> &all_labels
-//) {
-//
-//    std::map<int, int> generalConfig;
-//    std::mt19937 rng(randomDevice());    // random-number engine used (Mersenne-Twister in this case)
-//    std::uniform_int_distribution<int> pickRandomInt(0, 1); // guaranteed unbiased
-//
-//    int learningRateStrategy = pickRandomInt(rng);
-//
-//    int initializer = generalConfigEnums::xavier;
-//
-//    int optimizer = generalConfigEnums::momentum;
-//
-//    generalConfig[generalConfigEnums::ConfigType::learningRateStrategy] = learningRateStrategy;
-//    generalConfig[generalConfigEnums::ConfigType::optimizer] = optimizer;
-//    generalConfig[generalConfigEnums::ConfigType::initializer] = initializer;
-//
-//    const int OUTPUT_CLASSES = all_labels[0]->getNumOfRows();
-//    const int INPUT_DIMENSIONS = all_instances[0]->getNumOfRows();
-//
-//    generalConfig[generalConfigEnums::ConfigType::outputDimensions] = OUTPUT_CLASSES;
-//    generalConfig[generalConfigEnums::ConfigType::inputDimensions] = INPUT_DIMENSIONS;
-//
-//    return generalConfig;
-//
-////    std::map<std::string, int> generalConfig = {
-////            { "learningRateStrategy", generalConfigEnums::LearningRateStrategy ::constantDecay },
-////            { "initializer", generalConfigEnums::Initializer ::xavier},
-////            { "optimizer", generalConfigEnums::Optimizer ::momentum}
-////    };
-////    std::map<std::string, double> generalCoeffConfig = {
-////            { "maxTrainTimeMinutes", 60.0 },
-////            { "batchSize", BATCH_SIZE },
-////            { "l2reg" , l2rate },
-////            { "learningRateStart", learningRate },
-////            { "learningRateEnd", learningRateEnd },
-////            { "learningRate", learningRate }
-////    };
-//}
-//
-//std::vector<
-//    std::tuple<std::map<int, int>, std::map<std::string, double>, std::map<int, std::map<std::string, int>>>
-//> generateConfigs(
-//    int numberOfConfigs,
-//    int MIN_NUMBER_OF_LAYERS,
-//    int MAX_NUMBER_OF_LAYERS,
-//    int MIN_NEURONS_LAYER,
-//    int MAX_NEURONS_LAYER,
-//
-//    double maxTrainTimeInMinutes,
-//    double maxLearningRate,
-//    double minLearningRate,
-//    double maxL2,
-//    double minL2,
-//    int maxBatchSize,
-//    int minBatchSize,
-//
-//    std::vector<std::shared_ptr<Matrix<double>>> &all_instances,
-//    std::vector<std::shared_ptr<Matrix<double>>> &all_labels
-//) {
-//
-//    std::vector<
-//            std::tuple<std::map<int, int>, std::map<std::string, double>, std::map<int, std::map<std::string, int>>>
-//    > configs;
-//
-//    for (auto i = 0; i < numberOfConfigs; i++) {
-//        auto generalConfig = makeGeneralConfig(
-//                all_instances,
-//                all_labels
-//        );
-//
-//        auto coeffConfig = makeCoeffConfig(
-//                generalConfig,
-//                maxTrainTimeInMinutes,
-//                maxLearningRate,
-//                minLearningRate,
-//                maxL2,
-//                minL2,
-//                maxBatchSize,
-//                minBatchSize
-//        );
-//
-//        auto denseLayerConfig = makeDenseLayerConfig(
-//                MIN_NUMBER_OF_LAYERS,
-//                MAX_NUMBER_OF_LAYERS,
-//                MIN_NEURONS_LAYER,
-//                MAX_NEURONS_LAYER,
-//                generalConfig
-//        );
-//
-//        configs.push_back({ generalConfig, coeffConfig, denseLayerConfig });
-//    }
-//
-//    return configs;
-//}
 
 int main(int argc, const char** argv) {
     // get training data
@@ -477,12 +240,11 @@ int main(int argc, const char** argv) {
     auto l2reg = 0.000001;
     std::map<int, std::map<std::string, int>> denseLayerConfigMap = {
             { 1, {{ "width", INPUT_DIMENSIONS  }, { "height", 100 }, {"l2reg", 0 }}},
-
-	    { 2, {{ "width", 100 }, {"height", 121 }}},
-	    { 3, {{ "width", 121 }, {"height", 26 }}},
-	    { 4, {{ "width", 26 }, {"height", 163 }}},
-	    { 5, {{ "width", 163 }, {"height", 218 }}},
-	    { 6, {{ "width", 218 }, {"height", 110 }}},
+            { 2, {{ "width", 100 }, {"height", 121 }}},
+            { 3, {{ "width", 121 }, {"height", 26 }}},
+            { 4, {{ "width", 26 }, {"height", 163 }}},
+            { 5, {{ "width", 163 }, {"height", 218 }}},
+            { 6, {{ "width", 218 }, {"height", 110 }}},
             { 7, {{ "width", 110 }, { "height", OUTPUT_CLASSES }, {"activation", ActivationFunction ::softmax}, {"l2reg", 0 }}}
     };
 

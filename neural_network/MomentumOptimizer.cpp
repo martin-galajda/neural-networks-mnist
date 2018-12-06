@@ -4,6 +4,7 @@
 
 #include "MomentumOptimizer.h"
 #include "../initializers/ZeroInitializer.h"
+#include "../utilities/report_accuracy.h"
 
 
 void MomentumOptimizer::train() {
@@ -16,49 +17,65 @@ void MomentumOptimizer::train() {
 
     auto s = computationalGraph.forwardPass(inputsPlaceholder);
 
-    // we can mutate softmax outputs as we are using it just for computing derivatives...
-    *s -= (*expectedOutputsPlaceholder);
-    auto &lossDerivatives = s;
+    double batchAccuracy = reportAccuracy(s, expectedOutputsPlaceholder);
 
-    (*lossDerivatives) /= minibatchSize;
+    auto lossDerivatives = MatrixDoubleSharedPtr(*s - (*expectedOutputsPlaceholder));
 
     computationalGraph.backwardPass(lossDerivatives);
 
     auto &layers = computationalGraph.getLayers();
-    int layerIndex = layers.size() - 1;
-    for (auto layerIt = layers.rbegin(); layerIt != layers.rend(); layerIt++) {
 
-        auto &weightsDerivatives = (*layerIt)->getWeightsDerivatives();
-        auto &biasesDerivatives = (*layerIt)->getBiasesDerivatives();
+    auto layerWeightIndex = 0;
+    auto layerBiasIndex = 0;
 
-        // update weight derivatives
-        auto layerVelocities = this->velocities[layerIndex];
-        *layerVelocities *= velocityWeight;
-        weightsDerivatives *= learningRate;
-        *layerVelocities += weightsDerivatives;
+    auto currLayerIdx = layers.size() - 1;
+    for (auto layerIt = layers.begin(); layerIt != layers.end(); layerIt++) {
+        auto &layer = *layerIt;
 
+        if (layer->hasWeights()) {
+            auto &weightsDerivatives = layer->getWeightsDerivatives();
 
-        // update bias derivatives
-        auto biasesVelocities = this->biasesVelocities[layerIndex];
-        *biasesVelocities *= velocityWeight;
-        biasesDerivatives *= learningRate;
-        *biasesVelocities += biasesDerivatives;
+            // update weight derivatives
+            auto &layerVelocities = this->velocities[layerWeightIndex];
+            *layerVelocities *= velocityWeight;
+            weightsDerivatives *= (learningRate / minibatchSize);
+            *layerVelocities += weightsDerivatives;
 
-        weightsDerivatives.copyElementsFrom(*layerVelocities);
-        biasesDerivatives.copyElementsFrom(*biasesVelocities);
+            weightsDerivatives.copyElementsFrom(*layerVelocities);
 
-        if ((*layerIt)->getRegularizationType() == Regularization::l2) {
-            auto regularizer = (*layerIt)->getRegularizer();
-            auto regularizedWeightDerivatives = regularizer->getRegularizedWeightDerivatives();
-            *regularizedWeightDerivatives *= (learningRate / minibatchSize);
-            weightsDerivatives += *regularizedWeightDerivatives;
+//            if (layer->getRegularizationType() == Regularization::l2) {
+//                auto regularizer = layer->getRegularizer();
+//                auto regularizedWeightDerivatives = regularizer->getRegularizedWeightDerivatives();
+//                *regularizedWeightDerivatives *= (learningRate / minibatchSize);
+//                weightsDerivatives += *regularizedWeightDerivatives;
 
 //            auto regularizedBiasDerivatives = regularizer->getRegularizedBiasDerivatives();
 //            *regularizedBiasDerivatives *= (learningRate / minibatchSize);
 //            biasesDerivatives += (*regularizedBiasDerivatives);
+//            }
+
+            layerWeightIndex += 1;
         }
 
-        layerIndex--;
+
+        // update bias derivatives
+        if (layer->hasBiases()) {
+            auto &biasesDerivatives = layer->getBiasesDerivatives();
+            auto &biasesVelocities = this->biasesVelocities[layerBiasIndex];
+            *biasesVelocities *= velocityWeight;
+            biasesDerivatives *= (learningRate / minibatchSize);
+            *biasesVelocities += biasesDerivatives;
+            biasesDerivatives.copyElementsFrom(*biasesVelocities);
+
+//            if ((*layerIt)->getRegularizationType() == Regularization::l2) {
+//            auto regularizedBiasDerivatives = regularizer->getRegularizedBiasDerivatives();
+//            *regularizedBiasDerivatives *= (learningRate / minibatchSize);
+//            biasesDerivatives += (*regularizedBiasDerivatives);
+//            }
+
+            layerBiasIndex += 1;
+        }
+
     }
 
     computationalGraph.learn();
@@ -73,16 +90,22 @@ MomentumOptimizer::MomentumOptimizer(ComputationalGraph &computationalGraph,
     auto &layers = computationalGraph.getLayers();
 
     ZeroInitializer zeroInitializer;
-
-
     for (auto layerIt = layers.begin(); layerIt != layers.end(); layerIt++) {
-        auto layerWidth = (*layerIt)->getWidth();
-        auto layerHeight = (*layerIt)->getHeight();
+        if ((*layerIt)->hasWeights()) {
+            auto layerWidth = (*layerIt)->getWidth();
+            auto layerHeight = (*layerIt)->getHeight();
+            auto layerDepth = (*layerIt)->getDepth();
+            auto layerBatchSize = (*layerIt)->getBatchSize();
 
-        auto layerVelocities = std::shared_ptr<Matrix<double>>(new Matrix<double>(layerHeight, layerWidth, &zeroInitializer));
-        auto biasesVelocities = std::shared_ptr<Matrix<double>>(new Matrix<double>(layerHeight, 1, &zeroInitializer));
+            auto layerVelocities = std::shared_ptr<Matrix<double>>(new Matrix<double>(layerHeight, layerWidth, layerDepth, layerBatchSize, &zeroInitializer));
 
-        this->velocities.push_back(layerVelocities);
-        this->biasesVelocities.push_back(biasesVelocities);
+            this->velocities.push_back(std::move(layerVelocities));
+        }
+
+        if ((*layerIt)->hasBiases()) {
+            auto layerHeight = (*layerIt)->getHeight();
+            auto biasesVelocities = std::shared_ptr<Matrix<double>>(new Matrix<double>(layerHeight, 1, &zeroInitializer));
+            this->biasesVelocities.push_back(std::move(biasesVelocities));
+        }
     }
 }

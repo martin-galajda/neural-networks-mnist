@@ -13,7 +13,7 @@ BaseOptimizer::BaseOptimizer(
         std::vector<int> &trainIndices,
         int minibatchSize,
         double learningRate
-): computationalGraph(computationalGraph), minibatchSize(minibatchSize), instances(instances), labels(labels), trainIndices(trainIndices) {
+        ): computationalGraph(computationalGraph), minibatchSize(minibatchSize), instances(instances), labels(labels), trainIndices(trainIndices) {
 
     std::random_device randomDevice;     // only used once to initialise (seed) engine
     std::mt19937 rng(randomDevice());    // random-number engine used (Mersenne-Twister in this case)
@@ -24,17 +24,29 @@ BaseOptimizer::BaseOptimizer(
 
     minibatchIndices.reserve(minibatchSize);
 
-    auto layers = computationalGraph.getLayers();
-    auto firstLayer = layers.front();
-    auto lastLayer = layers.back();
+    if (computationalGraph.getInputSizeCols() > 1) {
+        // 2D
+        inputsPlaceholder = std::shared_ptr<Matrix<double>>(new Matrix<double>(computationalGraph.getInputSizeRows(), computationalGraph.getInputSizeCols(), 1, minibatchSize));
+        expectedOutputsPlaceholder = std::shared_ptr<Matrix<double>>(new Matrix<double>(computationalGraph.getOutputSize(), 1, 1, minibatchSize));
+    } else {
+        auto layers = computationalGraph.getLayers();
+        auto firstLayer = layers.front();
+        auto lastLayer = layers.back();
 
-    inputsPlaceholder = std::shared_ptr<Matrix<double>>(new Matrix<double>(firstLayer->getWidth(), minibatchSize));
-    expectedOutputsPlaceholder = std::shared_ptr<Matrix<double>>(new Matrix<double>(lastLayer->getHeight(), minibatchSize));
+        inputsPlaceholder = std::shared_ptr<Matrix<double>>(new Matrix<double>(firstLayer->getWidth(), minibatchSize));
+        expectedOutputsPlaceholder = std::shared_ptr<Matrix<double>>(new Matrix<double>(lastLayer->getHeight(), 1, 1, minibatchSize));
+    }
 
     this->learningRate = learningRate;
+    this->movingAverageAcc = 0;
 }
 
 void BaseOptimizer::populatePlaceholdersForMinibatch() {
-    populatePlaceholders(this->inputsPlaceholder, this->instances, this->minibatchIndices);
+    if (this->inputsPlaceholder->getBatchSize() > 1) {
+        // 2D
+        populatePlaceholders2D(this->inputsPlaceholder, this->instances, this->minibatchIndices);
+    } else {
+        populatePlaceholders(this->inputsPlaceholder, this->instances, this->minibatchIndices);
+    }
     populatePlaceholders(this->expectedOutputsPlaceholder, this->labels, this->minibatchIndices);
 }

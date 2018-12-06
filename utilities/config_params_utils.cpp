@@ -27,8 +27,8 @@ inline const char* initializerEnumToString(int initializer) {
 inline const char* learningStrategyEnumToString(int learningRateStrategy) {
     switch (learningRateStrategy)
     {
-        case generalConfigEnums::LearningRateStrategy ::constantDecay:   return "constantDecay";
-        case generalConfigEnums::LearningRateStrategy ::flat:   return "flat";
+        case generalConfigEnums::LearningRateStrategy::constantDecay:   return "constantDecay";
+        case generalConfigEnums::LearningRateStrategy::flat:   return "flat";
         default:      return "[Unknown learningStrategy]";
     }
 }

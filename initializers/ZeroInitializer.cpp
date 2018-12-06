@@ -3,8 +3,3 @@
 //
 
 #include "ZeroInitializer.h"
-//
-//
-//double ZeroInitializer::getValue(int row, int col) {
-//    return 0.0;
-//}

@@ -3,30 +3,55 @@
 //
 
 #include "ComputationalGraph.h"
-
-#define NOT_PRINT_BENCHMARK
+#include "../layers/DenseLayer.h"
 
 ComputationalGraph::ComputationalGraph() {
-    std::list<std::shared_ptr<DenseLayer>> layers;
+    std::list<BaseLayer *> layers;
     this->layers = layers;
 }
 
-void ComputationalGraph::addLayer(std::shared_ptr<DenseLayer> layer) {
+ComputationalGraph::ComputationalGraph(int graphInputSizeRows, int graphInputSizeCols, int graphOutputSize): ComputationalGraph() {
+    this->inputSizeRows = graphInputSizeRows;
+    this->inputSizeCols = graphInputSizeCols;
+    this->outputSize = graphOutputSize;
+}
+
+void ComputationalGraph::addLayer(BaseLayer *layer) {
     this->layers.push_back(layer);
 }
 
-void ComputationalGraph::addLayer(
+void ComputationalGraph::addDenseLayer(
         std::map<std::string, int> layerSizeDefinition,
         BaseInitializer *initializer,
         ActivationFunction activationFunction,
-        double l2regularization
+        double l2regularization,
+        std::string name
 ) {
 
     int layerWidth = layerSizeDefinition["width"];
     int layerHeight = layerSizeDefinition["height"];
     int layerBatchSize = layerSizeDefinition["batchSize"];
 
-    auto newLayer = std::shared_ptr<DenseLayer>(new DenseLayer(layerWidth, layerHeight, layerBatchSize, initializer, activationFunction));
+    auto newLayer = new DenseLayer(layerWidth, layerHeight, layerBatchSize, initializer, activationFunction, name);
+
+    if (l2regularization != 0.0) {
+        newLayer->setL2Regularization(l2regularization);
+    }
+
+    this->layers.push_back(newLayer);
+}
+
+void ComputationalGraph::addDenseLayer(
+        int layerWidth,
+        int layerHeight,
+        int layerBatchSize,
+        BaseInitializer *initializer,
+        ActivationFunction activationFunction,
+        double l2regularization,
+        std::string name
+) {
+
+    auto newLayer = new DenseLayer(layerWidth, layerHeight, layerBatchSize, initializer, activationFunction, name);
 
     if (l2regularization != 0.0) {
         newLayer->setL2Regularization(l2regularization);
@@ -38,30 +63,34 @@ void ComputationalGraph::addLayer(
 std::shared_ptr<Matrix<double>> ComputationalGraph::forwardPass(std::shared_ptr<Matrix<double>> input) {
     auto &lastOutput = input;
     for (auto layerIt = this->layers.begin(); layerIt != this->layers.end(); layerIt++) {
-        auto &currLayer = *(*layerIt);
+//        auto &currLayer = *(*layerIt);
 
-        lastOutput = currLayer.forwardPropagate(lastOutput);
+        lastOutput = (*layerIt)->forwardPropagate(lastOutput);
     }
 
 
     return lastOutput;
 }
 
-void ComputationalGraph::backwardPass(std::shared_ptr<Matrix<double>> lossDerivatives){
+MatrixDoubleSharedPtr ComputationalGraph::backwardPass(std::shared_ptr<Matrix<double>> lossDerivatives){
     std::shared_ptr<Matrix<double>> &lastDerivatives = lossDerivatives;
 
     for (auto layerIt = this->layers.rbegin(); layerIt != this->layers.rend(); layerIt++) {
-        auto &currLayer = *(*layerIt);
+//        auto &currLayer = *(*layerIt);
 
-        lastDerivatives = currLayer.backPropagate(lastDerivatives);
+        lastDerivatives = (*layerIt)->backPropagate(lastDerivatives);
     }
+
+    return lastDerivatives;
 }
 
 void ComputationalGraph::learn(){
     for (auto layerIt = this->layers.rbegin(); layerIt != this->layers.rend(); layerIt++) {
         auto &currLayer = *(*layerIt);
 
-        currLayer.updateWeights();
+        if (currLayer.hasWeights()) {
+            currLayer.updateWeights();
+        }
     }
 }
 
@@ -70,9 +99,13 @@ void ComputationalGraph::learn(double learningRate){
     for (auto layerIt = this->layers.rbegin(); layerIt != this->layers.rend(); layerIt++) {
         auto &currLayer = *(*layerIt);
 
-        currLayer.getWeightsDerivatives() *= learningRate;
-        currLayer.getBiasesDerivatives() *= learningRate;
+        if (currLayer.hasBiases()) {
+            currLayer.getBiasesDerivatives() *= learningRate;
+        }
 
-        currLayer.updateWeights();
+        if (currLayer.hasWeights()) {
+            currLayer.getWeightsDerivatives() *= learningRate;
+            currLayer.updateWeights();
+        }
     }
 }

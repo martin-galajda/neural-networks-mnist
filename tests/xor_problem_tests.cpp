@@ -202,21 +202,21 @@ TEST(denseLayerTests, xorProblemWithComputationalGraph)
     ComputationalGraph computationalGraph;
 
     // First layer - hidden
-    computationalGraph.addLayer(
+    computationalGraph.addDenseLayer(
             {
-                { "width", INPUT_DIMENSIONS },
-                { "height", L1_NUM_OF_NEURONS },
-                { "batchSize", BATCH_SIZE }
+                    {"width",     INPUT_DIMENSIONS},
+                    {"height",    L1_NUM_OF_NEURONS},
+                    {"batchSize", BATCH_SIZE}
             },
             normalInitializer,
             ActivationFunction::relu);
 
     // Second layer - output
-    computationalGraph.addLayer(
+    computationalGraph.addDenseLayer(
             {
-                { "width", L1_NUM_OF_NEURONS },
-                { "height", OUTPUT_CLASSES },
-                { "batchSize", BATCH_SIZE }
+                    {"width",     L1_NUM_OF_NEURONS},
+                    {"height",    OUTPUT_CLASSES},
+                    {"batchSize", BATCH_SIZE}
             },
             normalInitializer2,
             ActivationFunction::softmax);
@@ -310,22 +310,22 @@ TEST(denseLayerTests, xorProblemWithOptimizer)
 
     double l2reg = 0.000000;
     // First layer - hidden
-    computationalGraph.addLayer(
+    computationalGraph.addDenseLayer(
             {
-                    { "width", INPUT_DIMENSIONS },
-                    { "height", L1_NUM_OF_NEURONS },
-                    { "batchSize", BATCH_SIZE }
+                    {"width",     INPUT_DIMENSIONS},
+                    {"height",    L1_NUM_OF_NEURONS},
+                    {"batchSize", BATCH_SIZE}
             },
             normalInitializer,
             ActivationFunction::relu,
             l2reg);
 
     // Second layer - output
-    computationalGraph.addLayer(
+    computationalGraph.addDenseLayer(
             {
-                    { "width", L1_NUM_OF_NEURONS },
-                    { "height", OUTPUT_CLASSES },
-                    { "batchSize", BATCH_SIZE }
+                    {"width",     L1_NUM_OF_NEURONS},
+                    {"height",    OUTPUT_CLASSES},
+                    {"batchSize", BATCH_SIZE}
             },
             normalInitializer2,
             ActivationFunction::softmax);

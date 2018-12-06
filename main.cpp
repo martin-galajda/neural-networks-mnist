@@ -18,7 +18,6 @@
 
 #define _GLIBCXX_USE_CXX11_ABI 0
 
-//
 std::map<std::string, double> computeAccuracy(
         std::shared_ptr<Matrix<double>> &inputs,
         std::vector<std::shared_ptr<Matrix<double>>> &instances,
@@ -74,7 +73,6 @@ std::map<std::string, double> computeAccuracy(
         { "accuracy", ((matchedPrediction * 1.0) / NUM_OF_INSTANCES) }
     };
 }
-
 
 std::shared_ptr<ComputationalGraph> performTraining(
         std::map<int, int> &generalConfig,
@@ -150,11 +148,11 @@ std::shared_ptr<ComputationalGraph> performTraining(
             l2reg = (double) config.find("l2reg")->second;
         }
 
-        computationalGraph.addLayer(
+        computationalGraph.addDenseLayer(
                 {
-                        { "width", config["width"] },
-                        { "height", config["height"] },
-                        { "batchSize", generalCoeffConfig["batchSize"] }
+                        {"width",     config["width"]},
+                        {"height",    config["height"]},
+                        {"batchSize", generalCoeffConfig["batchSize"]}
                 },
                 initializer,
                 activationFunction,
@@ -164,36 +162,17 @@ std::shared_ptr<ComputationalGraph> performTraining(
         free(initializer);
     }
 
-    BaseOptimizer *optimizerPtr;
+    BaseOptimizer *optimizerPtr = new MomentumOptimizer(computationalGraph, all_instances, all_labels, training_indices, BATCH_SIZE, currLearningRate);
 
-    if (generalConfig[generalConfigEnums::ConfigType::optimizer] == generalConfigEnums::momentum) {
-        optimizerPtr = new MomentumOptimizer(computationalGraph, all_instances, all_labels, training_indices, BATCH_SIZE, currLearningRate);
-    } else if (generalConfig[generalConfigEnums::ConfigType::optimizer] == generalConfigEnums::minibatch) {
-        optimizerPtr = new MiniBatchOptimizer(computationalGraph, all_instances, all_labels, training_indices, BATCH_SIZE, currLearningRate);;
-    } else if  (generalConfig[generalConfigEnums::ConfigType::optimizer] == generalConfigEnums::adam) {
-        optimizerPtr = new AdamOptimizer(computationalGraph, all_instances, all_labels, training_indices, BATCH_SIZE, currLearningRate);;
-    }
+//
+//    if (generalConfig[generalConfigEnums::ConfigType::optimizer] == generalConfigEnums::momentum) {
+//        optimizerPtr = new MomentumOptimizer(computationalGraph, all_instances, all_labels, training_indices, BATCH_SIZE, currLearningRate);
+//    } else if (generalConfig[generalConfigEnums::ConfigType::optimizer] == generalConfigEnums::minibatch) {
+//        optimizerPtr = new MiniBatchOptimizer(computationalGraph, all_instances, all_labels, training_indices, BATCH_SIZE, currLearningRate);;
+//    } else if  (generalConfig[generalConfigEnums::ConfigType::optimizer] == generalConfigEnums::adam) {
+//        optimizerPtr = new AdamOptimizer(computationalGraph, all_instances, all_labels, training_indices, BATCH_SIZE, currLearningRate);;
+//    }
     auto &optimizer = *optimizerPtr;
-
-    std::map<double, bool > stageAlreadyLogged = {
-            { 60*0.5, false },
-            { 60*1.0, false },
-            { 60*1.5, false },
-            { 60*3.0, false },
-            { 60*5.0, false },
-            { 60*7.5, false },
-            { 60*10.0, false },
-            { 60*12.5, false },
-            { 60*15.0, false },
-            { 60*17.5, false },
-            { 60*20.0, false },
-            { 60*22.5, false },
-            { 60*30.5, false },
-            { 60*35.5, false },
-            { 60*40.5, false },
-            { 60*45.5, false },
-            { 60*50.5, false },
-    };
 
     for (batch = 0; secondsPassed < (60 * generalCoeffConfig["maxTrainTimeMinutes"]); batch++) {
         optimizerPtr->train();
@@ -204,29 +183,9 @@ std::shared_ptr<ComputationalGraph> performTraining(
         currLearningRate = std::max(currLearningRate, learningRateEnd);
         optimizerPtr->setLearningRate(currLearningRate);
 
-        for (auto &stageElement: stageAlreadyLogged) {
-            if (secondsPassed > stageElement.first && !stageElement.second) {
-//                std::cout << std::endl;
-//
-//                secondsComputingAccuracy += computeAccuracy(
-//                        inputs,
-//                        all_instances,
-//                        expectedOutputs,
-//                        all_labels,
-//                        computationalGraph,
-//                        BATCH_SIZE,
-//                        validation_indices
-//                )["secondsPassed"];
-//
-//                std::cout << "Seconds passed: " << secondsPassed << std::endl;
-//                std::cout << "Processed examples: " << batch * BATCH_SIZE << std::endl;
-
-                stageElement.second = true;
-            }
-        }
-
-
         secondsPassed = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - t_start).count() - secondsComputingAccuracy;
+
+      std::cout << std::endl << "Processed examples: " << batch * BATCH_SIZE << std::endl;
     }
 
     std::cout << std::endl << "Processed examples: " << batch * BATCH_SIZE << std::endl;
@@ -275,12 +234,6 @@ std::shared_ptr<ComputationalGraph> performTraining(
     };
     std::cout << makeConfigParamsString(generalConfig, generalCoeffConfig, computationalGraph, results) << std::endl;
 
-//    return {
-//            { "secondsComputingAccuracy", secondsComputingAccuracy },
-//            { "validationAccuracy", validationAccuracy },
-//            { "trainAccuracy", trainAccuracy },
-//            { "testAccuracy", testAccuracy },
-//    };
     return computationalGraphPtr;
 }
 
@@ -468,7 +421,6 @@ int main(int argc, const char** argv) {
     std::vector<int> test_indices(all_test_instances.size());
     std::iota(test_indices.begin(), test_indices.end(), 0);
 
-
     int numberOfConfigs = 20;
     int MIN_NUMBER_OF_LAYERS = 2;
     int MAX_NUMBER_OF_LAYERS = 3;
@@ -482,7 +434,6 @@ int main(int argc, const char** argv) {
     double minL2 = 0;
     int maxBatchSize = 100;
     int minBatchSize = 10;
-
 
     auto configs = generateConfigs(
             numberOfConfigs,

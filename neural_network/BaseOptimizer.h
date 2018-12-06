@@ -1,13 +1,12 @@
 //
 // Created by Martin Galajda on 29/10/2018.
 //
-#define _GLIBCXX_USE_CXX11_ABI 0
 
 #include <vector>
 #include "./ComputationalGraph.h"
 
-#ifndef MATRIXBENCHMARKS_BASEOPTIMIZER_H
-#define MATRIXBENCHMARKS_BASEOPTIMIZER_H
+#ifndef NEURAL_NETWORKS_BASEOPTIMIZER_H
+#define NEURAL_NETWORKS_BASEOPTIMIZER_H
 
 enum LossFunction { SoftmaxCrossEntropy };
 
@@ -32,7 +31,6 @@ protected:
     std::vector<std::shared_ptr<Matrix<double>>> &instances;
     std::vector<int> &trainIndices;
     std::vector<std::shared_ptr<Matrix<double>>> &labels;
-    LossFunction lossFunction;
 
     std::mt19937 rng;
     std::uniform_int_distribution<int> pickRandomTrainIndex;
@@ -43,9 +41,11 @@ protected:
 
     int minibatchSize;
     double learningRate;
+    double movingAverageAcc = 0;
+    double movingAverageAccCount = 0;
 
     void populatePlaceholdersForMinibatch();
 };
 
 
-#endif //MATRIXBENCHMARKS_BASEOPTIMIZER_H
+#endif //NEURAL_NETWORKS_BASEOPTIMIZER_H
