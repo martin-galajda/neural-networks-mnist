@@ -5,6 +5,7 @@
 #include "ConvLayer.h"
 #include "../matrix_impl/Matrix.hpp"
 #include "../ops/Convolution.h"
+#include "../initializers/XavierInitializer.h"
 #include <chrono>
 
 ConvLayer::ConvLayer(
@@ -28,9 +29,38 @@ ConvLayer::ConvLayer(
   this->activationFunction = activationFunction;
   this->batchSize = batchSize;
   this->stride = stride;
+
+  this->isInitialized = true;
+}
+
+ConvLayer::ConvLayer(
+  int kernelWidth,
+  int kernelHeight,
+  int batchSize,
+  int inputDepth,
+  int numberOfFilters,
+  ActivationFunction activationFunction,
+  int stride,
+  std::string name
+): BaseLayer(batchSize, name), kernelWidth(kernelWidth), kernelHeight(kernelHeight), inputDepth(inputDepth), numberOfFilters(numberOfFilters) {
+  // kernels
+  auto kernelCols = kernelWidth;
+  auto kernelRows = kernelHeight;
+
+  this->weights = MatrixDoubleSharedPtr(new MatrixDouble(kernelRows, kernelCols, inputDepth, numberOfFilters));
+  this->weightsDerivatives = MatrixDoubleSharedPtr(new MatrixDouble(kernelRows, kernelCols, inputDepth, numberOfFilters));
+
+  this->activationFunction = activationFunction;
+  this->batchSize = batchSize;
+  this->stride = stride;
+  this->numberOfFilters = numberOfFilters;
 }
 
 MatrixDoubleSharedPtr ConvLayer::forwardPropagate(MatrixDoubleSharedPtr X) {
+  if (!this->isInitialized){
+    this->initialize(X);
+  }
+
   this->inputs = MatrixDoubleSharedPtr(new MatrixDouble(X->getNumOfRows(), X->getNumOfCols(), X->getDepth(), X->getBatchSize()));
   this->inputs = X;
 
@@ -133,6 +163,19 @@ std::shared_ptr<Matrix<double>> ConvLayer::backPropagate(std::shared_ptr<Matrix<
 
 
   return neuronDerivatives;
+}
+
+void ConvLayer::initialize(std::shared_ptr<Matrix<double>> X) {
+  auto SIZE_WIDTH_CONV = (int) (((X->getNumOfCols() - kernelWidth) / stride) + 1);
+  auto SIZE_HEIGHT_CONV = (int) (((X->getNumOfRows() - kernelHeight) / stride) + 1);
+
+  auto xavier = new XavierInitializer(X->getNumOfCols() * X->getNumOfRows() * X->getDepth(), SIZE_HEIGHT_CONV * SIZE_WIDTH_CONV * numberOfFilters);
+
+  this->weights->initialize(xavier);
+
+  free(xavier);
+
+  this->isInitialized = true;
 }
 
 std::shared_ptr<Matrix<double>> ConvLayer::activate(std::shared_ptr<Matrix<double>> &X) {

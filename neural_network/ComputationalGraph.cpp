@@ -4,6 +4,7 @@
 
 #include "ComputationalGraph.h"
 #include "../layers/DenseLayer.h"
+#include "../layers/ConvLayer.h"
 
 ComputationalGraph::ComputationalGraph() {
     std::list<BaseLayer *> layers;
@@ -42,29 +43,45 @@ void ComputationalGraph::addDenseLayer(
 }
 
 void ComputationalGraph::addDenseLayer(
-        int layerWidth,
         int layerHeight,
         int layerBatchSize,
-        BaseInitializer *initializer,
         ActivationFunction activationFunction,
-        double l2regularization,
         std::string name
 ) {
 
-    auto newLayer = new DenseLayer(layerWidth, layerHeight, layerBatchSize, initializer, activationFunction, name);
-
-    if (l2regularization != 0.0) {
-        newLayer->setL2Regularization(l2regularization);
-    }
+    auto newLayer = new DenseLayer(layerHeight, layerBatchSize, activationFunction, name);
 
     this->layers.push_back(newLayer);
+}
+
+
+void ComputationalGraph::addConvLayer(
+        int kernelWidth,
+        int kernelHeight,
+        int stride,
+        int numberOfFilters,
+        int batchSize,
+        ActivationFunction activationFunction,
+        std::string name
+) {
+
+    auto isFirstLayer = this->layers.size() == 0;
+    auto layerDepth = 1;
+
+    if (!isFirstLayer) {
+      auto lastLayer = this->layers.back();
+
+      layerDepth = lastLayer->getLayerOutputDepth();
+    }
+
+    auto conv = new ConvLayer(kernelWidth, kernelHeight, batchSize, layerDepth, numberOfFilters, activationFunction, stride, name);
+
+    this->addLayer(conv);
 }
 
 std::shared_ptr<Matrix<double>> ComputationalGraph::forwardPass(std::shared_ptr<Matrix<double>> input) {
     auto &lastOutput = input;
     for (auto layerIt = this->layers.begin(); layerIt != this->layers.end(); layerIt++) {
-//        auto &currLayer = *(*layerIt);
-
         lastOutput = (*layerIt)->forwardPropagate(lastOutput);
     }
 
@@ -76,8 +93,6 @@ MatrixDoubleSharedPtr ComputationalGraph::backwardPass(std::shared_ptr<Matrix<do
     std::shared_ptr<Matrix<double>> &lastDerivatives = lossDerivatives;
 
     for (auto layerIt = this->layers.rbegin(); layerIt != this->layers.rend(); layerIt++) {
-//        auto &currLayer = *(*layerIt);
-
         lastDerivatives = (*layerIt)->backPropagate(lastDerivatives);
     }
 

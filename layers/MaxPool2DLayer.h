@@ -22,6 +22,9 @@ public:
 
   virtual bool hasBiases() { return false; }
   virtual bool hasWeights() { return false; }
+
+  // max pool 2d layer cannot determine output depth -> it depends on previous conv layer
+  virtual int getLayerOutputDepth() { return 0; }
 protected:
   int kernelWidth;
   int kernelHeight;

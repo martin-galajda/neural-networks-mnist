@@ -21,10 +21,20 @@ public:
 
     void addLayer(BaseLayer *layer);
 
+    void addConvLayer(
+      int kernelWidth,
+      int kernelHeight,
+      int stride,
+      int numberOfFilters,
+      int batchSize,
+      ActivationFunction activationFunction,
+      std::string name
+    );
+
     void addDenseLayer(std::map<std::string, int> layerSizeDefinition, BaseInitializer *initializer,
                        ActivationFunction activationFunction, double = 0.0, std::string name = "DenseLayer");
-    void addDenseLayer(int, int, int, BaseInitializer *initializer,
-                       ActivationFunction activationFunction, double = 0.0, std::string name = "DenseLayer");
+    void addDenseLayer(int layerHeight, int layerBatchSize, ActivationFunction activationFunction, std::string name = "DenseLayer");
+
     std::shared_ptr<Matrix<double>> forwardPass(std::shared_ptr<Matrix<double>> input);
 
     MatrixDoubleSharedPtr backwardPass(std::shared_ptr<Matrix<double>> lossDerivatives);

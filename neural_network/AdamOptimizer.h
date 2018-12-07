@@ -20,6 +20,8 @@ public:
     );
 
     virtual void train();
+
+    void initialize();
 protected:
 
     double beta1 = 0.9;
@@ -35,6 +37,8 @@ protected:
 
     std::vector<std::shared_ptr<Matrix<double>>> gradientAveragesBiases;
     std::vector<std::shared_ptr<Matrix<double>>> squaredGradientAveragesBiases;
+
+    bool isInitialized = false;
 };
 
 

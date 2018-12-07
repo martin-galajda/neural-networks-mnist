@@ -21,8 +21,8 @@ double reportAccuracy(MatrixDoubleSharedPtr predicted, MatrixDoubleSharedPtr exp
 
   auto accuracy = (matchedPredictions / 1.0) / predictedValues->getNumOfRows();
 
-  std::cout << "Batch accuracy: " << accuracy
-            << std::endl;
+//  std::cout << "Batch accuracy: " << accuracy
+//            << std::endl;
 
   return accuracy;
 }

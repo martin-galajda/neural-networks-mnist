@@ -20,12 +20,16 @@ public:
             double learningRate
     );
 
+    void initialize();
+
     virtual void train();
 protected:
 
     std::vector<std::shared_ptr<Matrix<double>>> velocities;
     std::vector<std::shared_ptr<Matrix<double>>> biasesVelocities;
     double velocityWeight = 0.9;
+
+  bool isInitialized = false;
 };
 
 #endif //NEURAL_NETWORKS_MOMENTUMOPTIMIZER_H

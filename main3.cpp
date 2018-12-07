@@ -113,130 +113,29 @@ std::shared_ptr<ComputationalGraph> performTraining(
   auto inputs = std::shared_ptr<Matrix<double>>(new Matrix<double>(28, 28, 1, BATCH_SIZE));
   auto expectedOutputs = std::shared_ptr<Matrix<double>>(new Matrix<double>(10, 1, 1, BATCH_SIZE));
 
-//  auto zeroInitializer = new ZeroInitializer();
-
-
-//  Conv2D(filters=2, kernel_size=3, activation='relu', input_shape=(28,28, 1), strides=1),
-//    Conv2D(filters=8, kernel_size=3, activation='relu', strides=2),
-//    Conv2D(filters=64, kernel_size=3, activation='relu', strides=2),
-//    Conv2D(filters=64, kernel_size=3, activation='relu', strides=2),
-//    Conv2D(filters=64, kernel_size=2, activation='relu', strides=1),
-//
-////#         Conv2D(filters=3, kernel_size=3, activation='relu', strides=3),
-//
-//    Flatten(),
-//    Dense(units=256, activation='relu'),
-//
-//    Dense(units=10, activation='softmax')
-
-
   auto STRIDE_CONV_1 = 1;
-  auto STRIDE_CONV_2 = 2;
-  auto STRIDE_CONV_3 = 2;
-  auto STRIDE_CONV_4 = 2;
-  auto STRIDE_CONV_5 = 1;
-//  auto STRIDE_CONV_4 = 3;
+  auto STRIDE_CONV_2 = 1;
 
   auto WIDTH_CONV_1 = 3;
   auto WIDTH_CONV_2 = 3;
-  auto WIDTH_CONV_3 = 3;
-  auto WIDTH_CONV_4 = 3;
-  auto WIDTH_CONV_5 = 2;
-//  auto WIDTH_CONV_4 = 5;
 
   auto FILTERS_CONV_1 = 2;
   auto FILTERS_CONV_2 = 4;
-  auto FILTERS_CONV_3 = 32;
-  auto FILTERS_CONV_4 = 32;
-  auto FILTERS_CONV_5 = 32;
-//  auto FILTERS_CONV_4 = 10;
 
-  auto SIZE_CONV_1 = (int) (((28 - WIDTH_CONV_1) / STRIDE_CONV_1) + 1);
-  auto SIZE_CONV_2 = (int) ((SIZE_CONV_1 - WIDTH_CONV_2) / STRIDE_CONV_2) + 1;
-  auto SIZE_CONV_3 = (int) ((SIZE_CONV_2 - WIDTH_CONV_3) / STRIDE_CONV_3) + 1;
-  auto SIZE_CONV_4 = (int) ((SIZE_CONV_3 - WIDTH_CONV_4) / STRIDE_CONV_4) + 1;
-  auto SIZE_CONV_5 = (int) ((SIZE_CONV_4 - WIDTH_CONV_5) / STRIDE_CONV_5) + 1;
-//  auto SIZE_CONV_4 = (int) ((SIZE_CONV_3 - WIDTH_CONV_4) / STRIDE_CONV_4) + 1;
+  computationalGraph.addConvLayer(WIDTH_CONV_1, WIDTH_CONV_1, STRIDE_CONV_1, FILTERS_CONV_1, BATCH_SIZE, ActivationFunction::relu, "ConvLayer1");
+  computationalGraph.addConvLayer(WIDTH_CONV_2, WIDTH_CONV_2, STRIDE_CONV_2, FILTERS_CONV_2, BATCH_SIZE, ActivationFunction::relu, "ConvLayer2");
 
-
-
-  auto MAX_POOL_1_WIDTH = 4;
-  auto MAX_POOL_1_HEIGHT = 4;
-  auto MAX_POOL_1_STRIDE = 4;
-//  auto SIZE_MAX_POOL_1 = (int) ((SIZE_CONV_3 - MAX_POOL_1_WIDTH) / MAX_POOL_1_STRIDE) + 1;
-  auto SIZE_MAX_POOL_1 = (int) ((SIZE_CONV_2 - MAX_POOL_1_WIDTH) / MAX_POOL_1_STRIDE) + 1;
-
-
-  auto xavierConv1 = new XavierInitializer(28 * 28, SIZE_CONV_1 * SIZE_CONV_1 * FILTERS_CONV_1);
-  auto xavierConv2 = new XavierInitializer(SIZE_CONV_1 * SIZE_CONV_1 * FILTERS_CONV_1, SIZE_CONV_2 * SIZE_CONV_2 * FILTERS_CONV_2);
-  auto xavierConv3 = new XavierInitializer(SIZE_CONV_2 * SIZE_CONV_2 * FILTERS_CONV_2, SIZE_CONV_3 * SIZE_CONV_3 * FILTERS_CONV_3);
-  auto xavierConv4 = new XavierInitializer(SIZE_CONV_3 * SIZE_CONV_3 * FILTERS_CONV_3, SIZE_CONV_4 * SIZE_CONV_4 * FILTERS_CONV_4);
-  auto xavierConv5 = new XavierInitializer(SIZE_CONV_4 * SIZE_CONV_4 * FILTERS_CONV_4, SIZE_CONV_5 * SIZE_CONV_5 * FILTERS_CONV_5);
-//  auto xavierConv1 = new NormalInitializer();
-//  auto xavierConv2 = new NormalInitializer();
-
-
-  auto conv1 = new ConvLayer(WIDTH_CONV_1, WIDTH_CONV_1, BATCH_SIZE, 1, FILTERS_CONV_1, xavierConv1, ActivationFunction::relu, STRIDE_CONV_1, "ConvLayer1");
-  auto conv2 = new ConvLayer(WIDTH_CONV_2, WIDTH_CONV_2, BATCH_SIZE, FILTERS_CONV_1, FILTERS_CONV_2, xavierConv2, ActivationFunction::relu, STRIDE_CONV_2, "ConvLayer2");
-  auto conv3 = new ConvLayer(WIDTH_CONV_3, WIDTH_CONV_3, BATCH_SIZE, FILTERS_CONV_2, FILTERS_CONV_3, xavierConv3, ActivationFunction::relu, STRIDE_CONV_3, "ConvLayer3");
-  auto conv4 = new ConvLayer(WIDTH_CONV_4, WIDTH_CONV_4, BATCH_SIZE, FILTERS_CONV_3, FILTERS_CONV_4, xavierConv4, ActivationFunction::relu, STRIDE_CONV_4, "ConvLayer4");
-  auto conv5 = new ConvLayer(WIDTH_CONV_5, WIDTH_CONV_5, BATCH_SIZE, FILTERS_CONV_4, FILTERS_CONV_5, xavierConv5, ActivationFunction::relu, STRIDE_CONV_5, "ConvLayer5");
-
+  auto MAX_POOL_1_WIDTH = 2;
+  auto MAX_POOL_1_HEIGHT = 2;
+  auto MAX_POOL_1_STRIDE = 2;
   auto maxPool1 = new MaxPool2DLayer(MAX_POOL_1_WIDTH, MAX_POOL_1_HEIGHT, MAX_POOL_1_STRIDE, "MaxPool1");
+  computationalGraph.addLayer(maxPool1);
 
-  auto conv1WeightsCopy = conv1->getWeights().copy();
-  auto conv2WeightsCopy = conv2->getWeights().copy();
-
-  computationalGraph.addLayer(conv1);
-  computationalGraph.addLayer(conv2);
-  computationalGraph.addLayer(conv3);
-//  computationalGraph.addLayer(maxPool1);
-  computationalGraph.addLayer(conv4);
-  computationalGraph.addLayer(conv5);
   computationalGraph.addLayer(new FlattenLayer(BATCH_SIZE));
 
   auto DENSE_LAYER_UNITS = 128;
-  auto xavier1 = new XavierInitializer(SIZE_CONV_5 * SIZE_CONV_5 * FILTERS_CONV_5, DENSE_LAYER_UNITS);
-//  auto xavier1 = new XavierInitializer(SIZE_MAX_POOL_1 * SIZE_MAX_POOL_1 * FILTERS_CONV_2, DENSE_LAYER_UNITS);
-  auto xavier2 = new XavierInitializer(DENSE_LAYER_UNITS, 10);
-
-  computationalGraph.addDenseLayer(
-//    {
-//      {"width",     780 * 64 },
-//      {"height",    128 },
-//      {"batchSize", BATCH_SIZE}
-//    },
-//    SIZE_CONV_2 * SIZE_CONV_2 * FILTERS_CONV_2,
-    SIZE_CONV_5 * SIZE_CONV_5 * FILTERS_CONV_5,
-//    SIZE_MAX_POOL_1 * SIZE_MAX_POOL_1 * FILTERS_CONV_3,
-//    SIZE_MAX_POOL_1 * SIZE_MAX_POOL_1 * FILTERS_CONV_2,
-    DENSE_LAYER_UNITS,
-    BATCH_SIZE,
-    xavier1,
-    ActivationFunction ::relu,
-    0.0,
-    "DenseLayer1"
-  );
-
-  computationalGraph.addDenseLayer(
-//    {
-//      {"width",     128},
-//      {"height",    10},
-//      {"batchSize", BATCH_SIZE}
-//    },
-    DENSE_LAYER_UNITS,
-    10,
-    BATCH_SIZE,
-    xavier2,
-    ActivationFunction ::softmax,
-    0.0,
-    "DenseLayer2"
-  );
-
-  free(xavier1);
-  free(xavier2);
-  free(xavierConv1);
-  free(xavierConv2);
+  computationalGraph.addDenseLayer(DENSE_LAYER_UNITS, BATCH_SIZE, ActivationFunction::relu, "DenseLayer1");
+  computationalGraph.addDenseLayer(10, BATCH_SIZE, ActivationFunction::softmax, "OutputLayer");
 
 
 //  BaseOptimizer *optimizerPtr;
@@ -248,15 +147,7 @@ std::shared_ptr<ComputationalGraph> performTraining(
 
   for (batch = 0; secondsPassed < (60 * 28); batch++) {
     optimizerPtr->train();
-
-    secondsPassed = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - t_start).count() - secondsComputingAccuracy;
-//    if (batch % 10 == 0) {
-//      std::cout << std::endl << "Processed examples: " << batch * BATCH_SIZE << std::endl;
-//    }
   }
-
-  std::cout << "Weights absolute diff conv 1:" << conv1->getWeights().totalAbsDifference(conv1WeightsCopy) << std::endl;
-  std::cout << "Weights absolute diff conv 2:" << conv2->getWeights().totalAbsDifference(conv2WeightsCopy) << std::endl;
 
 
   std::cout << std::endl << "Processed examples: " << batch * BATCH_SIZE << std::endl;

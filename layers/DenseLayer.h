@@ -15,20 +15,28 @@
 
 class DenseLayer: public BaseLayer {
 public:
-    DenseLayer(int width, int height, int batchSize, double *data, ActivationFunction activationFunction);
-    DenseLayer(int width, int height, int batchSize, BaseInitializer *initializer, ActivationFunction activationFunction, std::string name = "DenseLayer");
+  DenseLayer(int width, int height, int batchSize, double *data, ActivationFunction activationFunction);
+  DenseLayer(int width, int height, int batchSize, BaseInitializer *initializer, ActivationFunction activationFunction, std::string name = "DenseLayer");
 
-    DenseLayer & operator=(const DenseLayer&) = delete;
-    DenseLayer(const DenseLayer&) = delete;
+  DenseLayer(int outputUnits, int batchSize, ActivationFunction activationFunction, std::string name);
 
-    ~DenseLayer();
+  DenseLayer & operator=(const DenseLayer&) = delete;
+  DenseLayer(const DenseLayer&) = delete;
 
-    virtual std::shared_ptr<Matrix<double>> forwardPropagate(std::shared_ptr<Matrix<double>> X);
-    virtual std::shared_ptr<Matrix<double>> activate(std::shared_ptr<Matrix<double>> &X);
-    virtual std::shared_ptr<Matrix<double>> backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives);
+  ~DenseLayer();
 
-    virtual bool hasBiases();
-    virtual bool hasWeights();
+  void initialize(std::shared_ptr<Matrix<double>> X);
+
+  virtual std::shared_ptr<Matrix<double>> forwardPropagate(std::shared_ptr<Matrix<double>> X);
+  virtual std::shared_ptr<Matrix<double>> activate(std::shared_ptr<Matrix<double>> &X);
+  virtual std::shared_ptr<Matrix<double>> backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives);
+
+  virtual bool hasBiases();
+  virtual bool hasWeights();
+
+protected:
+  bool isInitialized = false;
+  int height;
 };
 
 

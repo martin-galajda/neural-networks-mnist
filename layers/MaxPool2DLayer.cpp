@@ -4,7 +4,6 @@
 
 #include "MaxPool2DLayer.h"
 
-
 std::shared_ptr<Matrix<double>> MaxPool2DLayer::forwardPropagate(std::shared_ptr<Matrix<double>> input) {
   this->inputs = std::shared_ptr<Matrix<double>> (input->copy());
 

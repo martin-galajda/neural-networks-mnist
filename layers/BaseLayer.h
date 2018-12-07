@@ -41,6 +41,8 @@ public:
     inline int getDepth() { return weights->getDepth(); }
     inline int getBatchSize() { return weights->getBatchSize(); }
 
+    virtual int getLayerOutputDepth() { return 1; }
+
     void setL2Regularization(double decayStrength);
 
     Regularization getRegularizationType() { return regularization; }

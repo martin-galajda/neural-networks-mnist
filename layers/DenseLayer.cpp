@@ -10,6 +10,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <iomanip>
+#include "../initializers/XavierInitializer.h"
 
 DenseLayer::~DenseLayer() {}
 
@@ -28,31 +29,67 @@ DenseLayer::DenseLayer(int width, int height, int batchSize, BaseInitializer *in
     this->biasesDerivatives = std::shared_ptr<Matrix<double> >(new Matrix<double>(height, 1));
 
     free(zeroInitializer);
+
+    this->isInitialized = true;
+}
+
+DenseLayer::DenseLayer(int height, int batchSize, ActivationFunction activationFunction, std::string name): BaseLayer(batchSize, name) {
+    this->activationFunction = activationFunction;
+    this->batchSize = batchSize;
+    this->height = height;
+}
+
+void DenseLayer::initialize(std::shared_ptr<Matrix<double>> X) {
+  auto inputUnits = X->getNumOfRows();
+  auto outputUnits = this->height;
+  auto xavier = new XavierInitializer(inputUnits, outputUnits);
+
+  this->weights = std::shared_ptr<Matrix<double>>(new Matrix<double>(outputUnits, inputUnits, xavier));
+  this->inputs = std::shared_ptr<Matrix<double>>(new Matrix<double>(inputUnits, 1, 1, batchSize));
+  this->activatedInputs = std::shared_ptr<Matrix<double>>(new Matrix<double>(outputUnits, 1, 1, batchSize));
+
+  auto zeroInitializer = new ZeroInitializer();
+
+  this->weightsDerivatives = std::shared_ptr<Matrix<double> >(new Matrix<double>(outputUnits, inputUnits, 1, 1));
+  this->neuronDerivatives = std::shared_ptr<Matrix<double> >(new Matrix<double>(inputUnits, 1, 1, batchSize));
+  this->biases = std::shared_ptr<Matrix<double> >(new Matrix<double>(outputUnits, 1, zeroInitializer));
+  this->biasesDerivatives = std::shared_ptr<Matrix<double> >(new Matrix<double>(outputUnits, 1));
+
+  free(zeroInitializer);
+  free(xavier);
+
+  this->isInitialized = true;
 }
 
 DenseLayer::DenseLayer(int width, int height, int batchSize, double *data, ActivationFunction activationFunction): BaseLayer(batchSize) {
-    this->weights = std::shared_ptr<Matrix<double>>(new Matrix<double>(data, height, width));
-    this->activationFunction = activationFunction;
-    this->batchSize = batchSize;
+  this->weights = std::shared_ptr<Matrix<double>>(new Matrix<double>(data, height, width));
+  this->activationFunction = activationFunction;
+  this->batchSize = batchSize;
 
-    this->weightsDerivatives = std::shared_ptr<Matrix<double> >(new Matrix<double>(height, width));
-    this->neuronDerivatives = std::shared_ptr<Matrix<double> >(new Matrix<double>(width, 1, 1, batchSize));
+  this->weightsDerivatives = std::shared_ptr<Matrix<double> >(new Matrix<double>(height, width));
+  this->neuronDerivatives = std::shared_ptr<Matrix<double> >(new Matrix<double>(width, 1, 1, batchSize));
+
+  this->isInitialized = true;
 }
 
 std::shared_ptr<Matrix<double>> DenseLayer::forwardPropagate(std::shared_ptr<Matrix<double>> X){
-    this->inputs = X;
+  if (!this->isInitialized) {
+    this->initialize(X);
+  }
 
-    auto A = std::shared_ptr<Matrix<double>>((*this->weights) * (*X));
+  this->inputs = X;
 
-    for (auto i = 0; i < A->getNumOfRows(); i++) {
-        for (auto j = 0; j < A ->getBatchSize(); j++) {
-            *(*A)(i, 0, 0, j) += (*biases)[i][0];
-        }
-    }
+  auto A = std::shared_ptr<Matrix<double>>((*this->weights) * (*X));
+
+  for (auto i = 0; i < A->getNumOfRows(); i++) {
+      for (auto j = 0; j < A ->getBatchSize(); j++) {
+          *(*A)(i, 0, 0, j) += (*biases)[i][0];
+      }
+  }
 
 
-    auto activatedInputs = this->activate(A);
-    this->activatedInputs = activatedInputs;
+  auto activatedInputs = this->activate(A);
+  this->activatedInputs = activatedInputs;
 
   return activatedInputs;
 }
@@ -112,7 +149,6 @@ std::shared_ptr<Matrix<double>> DenseLayer::backPropagate(std::shared_ptr<Matrix
                   // TODO CHECK!!!
                   (*biasesDerivatives)[forwardDerivativeIndex][0] += (currForwardDerivativeValue) / (*inputs).getNumOfRows();
                 }
-
             }
         }
     };

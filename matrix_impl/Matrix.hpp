@@ -22,11 +22,12 @@ public:
 
     Matrix(T* array, int rows, int cols, bool copyData = true, int depth = 1, int batchSize = 1);
 
-  ~Matrix();
+    ~Matrix();
 
     Matrix & operator=(const Matrix&) = delete;
     Matrix(const Matrix&) = delete;
 
+    void initialize(BaseInitializer *initializer);
 
     inline T *operator[] (const int& index);
     inline T *operator() (const int& i, const int& j, const int& z);

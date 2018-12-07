@@ -39,6 +39,9 @@ set(NN_SOURCES
         utilities/populate_placeholders.cpp
         utilities/config_params_utils.h
         utilities/config_params_utils.cpp
+        utilities/report_accuracy.h
+        utilities/report_accuracy.cpp
+
 
         neural_network/MiniBatchOptimizer.cpp
         neural_network/MiniBatchOptimizer.h
@@ -57,7 +60,7 @@ set(NN_SOURCES
         layers/FlattenLayer.h
         layers/MaxPool2DLayer.cpp
         layers/MaxPool2DLayer.h
-        layers/BatchNormalization.cpp layers/BatchNormalization.h)
+        layers/BatchNormalization.cpp layers/BatchNormalization.h neural_network/GraphBuilder.cpp neural_network/GraphBuilder.h)
 
 set(SOURCES
         tests/matrix_tests.cpp
@@ -69,7 +72,7 @@ set(SOURCES
         tests/conv_layer_tests.cpp
         tests/forward_pass_layers_test.cpp
 
-        ${NN_SOURCES} tests/max_pool_layer_tests.cpp utilities/test_utils.cpp utilities/test_utils.h utilities/report_accuracy.cpp utilities/report_accuracy.h)
+        ${NN_SOURCES} tests/max_pool_layer_tests.cpp utilities/test_utils.cpp utilities/test_utils.h )
 
 include_directories(./googletest-1.8.1/googletest/include ./googletest-1.8.1/googletest ./tests ./benchmarks ./matrix_impl ./initializers ./layers ./data)
 

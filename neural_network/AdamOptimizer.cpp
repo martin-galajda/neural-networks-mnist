@@ -23,10 +23,11 @@ void AdamOptimizer::train() {
     this->movingAverageAccCount += 1;
     this->movingAverageAcc = newMovingAccuracy;
 
-    std::cout << "Moving cumulative mean accuracy: " << this->movingAverageAcc
-              << std::endl;
+    auto processedCount = this->movingAverageAccCount * this->minibatchSize;
+    auto ONE_EPOCH = 50000;
 
-    if ((int) this->movingAverageAccCount % 1000 == 0) {
+    std::cout << "\r" << "Processed: (" << processedCount << "/" << ONE_EPOCH << "). " << "Moving cumulative mean accuracy: " << this->movingAverageAcc << std::flush;
+    if ((int) processedCount > ONE_EPOCH) {
         this->movingAverageAccCount = 1;
         this->movingAverageAcc = batchAccuracy;
     }
@@ -44,9 +45,12 @@ void AdamOptimizer::train() {
     auto layerWeightIndex = 0;
     auto layerBiasIndex = 0;
 
+    if (!this->isInitialized) {
+        this->initialize();
+    }
+
     for (auto layerIt = layers.begin(); layerIt != layers.end(); layerIt++) {
         auto learningRateAtCurrentTimestamp = learningRate * (std::sqrt(1.0 - std::pow(beta2, timestep))) * (1.0 - std::pow(beta1, timestep));
-
 
         if ((*layerIt)->hasWeights()) {
             auto &weightsDerivatives = (*layerIt)->getWeightsDerivatives();
@@ -124,6 +128,9 @@ AdamOptimizer::AdamOptimizer(ComputationalGraph &computationalGraph,
                                      std::vector<int> &trainIndices, int minibatchSize, double learningRate):
 
         BaseOptimizer(computationalGraph, instances, labels, trainIndices, minibatchSize, learningRate) {
+}
+
+void AdamOptimizer::initialize() {
     auto layers = computationalGraph.getLayers();
 
     ZeroInitializer zeroInitializer;
@@ -152,6 +159,7 @@ AdamOptimizer::AdamOptimizer(ComputationalGraph &computationalGraph,
 
             this->gradientAveragesBiases.push_back(layerGradientAveragesBiases);
         }
-
     }
+
+    this->isInitialized = true;
 }

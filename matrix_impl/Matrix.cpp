@@ -64,6 +64,20 @@ Matrix<T>::Matrix(T *data, int rows, int cols, bool copyData, int depth, int bat
 }
 
 
+template <typename T>
+void Matrix<T>::initialize(BaseInitializer *initializer){
+  for (auto sampleIdx = 0; sampleIdx < batchSize; sampleIdx++) {
+    for (auto depthIdx = 0; depthIdx < depth; depthIdx++) {
+      for (auto row = 0; row < numOfRows; row++) {
+        for (auto col = 0; col < numOfCols; col++) {
+          *(*this)(row, col, depthIdx, sampleIdx) = initializer->getValue();
+        }
+      }
+    }
+  }
+}
+
+
 /*********** DESTRUCTORS ********************************************************/
 
 template <typename T>

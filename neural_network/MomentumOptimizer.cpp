@@ -23,6 +23,10 @@ void MomentumOptimizer::train() {
 
     computationalGraph.backwardPass(lossDerivatives);
 
+    if (!this->isInitialized) {
+      this->initialize();
+    }
+
     auto &layers = computationalGraph.getLayers();
 
     auto layerWeightIndex = 0;
@@ -87,25 +91,33 @@ MomentumOptimizer::MomentumOptimizer(ComputationalGraph &computationalGraph,
      std::vector<int> &trainIndices, int minibatchSize, double learningRate):
 
      BaseOptimizer(computationalGraph, instances, labels, trainIndices, minibatchSize, learningRate) {
-    auto &layers = computationalGraph.getLayers();
 
-    ZeroInitializer zeroInitializer;
-    for (auto layerIt = layers.begin(); layerIt != layers.end(); layerIt++) {
-        if ((*layerIt)->hasWeights()) {
-            auto layerWidth = (*layerIt)->getWidth();
-            auto layerHeight = (*layerIt)->getHeight();
-            auto layerDepth = (*layerIt)->getDepth();
-            auto layerBatchSize = (*layerIt)->getBatchSize();
+  this->isInitialized = false;
+}
 
-            auto layerVelocities = std::shared_ptr<Matrix<double>>(new Matrix<double>(layerHeight, layerWidth, layerDepth, layerBatchSize, &zeroInitializer));
 
-            this->velocities.push_back(std::move(layerVelocities));
-        }
+void MomentumOptimizer::initialize() {
+  auto &layers = computationalGraph.getLayers();
 
-        if ((*layerIt)->hasBiases()) {
-            auto layerHeight = (*layerIt)->getHeight();
-            auto biasesVelocities = std::shared_ptr<Matrix<double>>(new Matrix<double>(layerHeight, 1, &zeroInitializer));
-            this->biasesVelocities.push_back(std::move(biasesVelocities));
-        }
+  ZeroInitializer zeroInitializer;
+  for (auto layerIt = layers.begin(); layerIt != layers.end(); layerIt++) {
+    if ((*layerIt)->hasWeights()) {
+      auto layerWidth = (*layerIt)->getWidth();
+      auto layerHeight = (*layerIt)->getHeight();
+      auto layerDepth = (*layerIt)->getDepth();
+      auto layerBatchSize = (*layerIt)->getBatchSize();
+
+      auto layerVelocities = std::shared_ptr<Matrix<double>>(new Matrix<double>(layerHeight, layerWidth, layerDepth, layerBatchSize, &zeroInitializer));
+
+      this->velocities.push_back(std::move(layerVelocities));
     }
+
+    if ((*layerIt)->hasBiases()) {
+      auto layerHeight = (*layerIt)->getHeight();
+      auto biasesVelocities = std::shared_ptr<Matrix<double>>(new Matrix<double>(layerHeight, 1, &zeroInitializer));
+      this->biasesVelocities.push_back(std::move(biasesVelocities));
+    }
+  }
+
+  this->isInitialized = true;
 }
