@@ -20,24 +20,22 @@ MatrixDoubleSharedPtr FlattenLayer::forwardPropagate(MatrixDoubleSharedPtr X) {
   this->cachedNumOfRows = X->getNumOfRows();
   this->cachedNumOfCols = X->getNumOfCols();
 
-  X->reshape(X->getNumOfRows() * X->getNumOfCols() * X->getDepth(), 1, 1,  X->getBatchSize());
+//  X->reshape(X->getNumOfRows() * X->getNumOfCols() * X->getDepth(), 1, 1,  X->getBatchSize());
 
-  return X;
+  this->activatedInputs = MatrixDoubleSharedPtr(X->copy());
+
+  this->activatedInputs->reshape(X->getNumOfRows() * X->getNumOfCols() * X->getDepth(), 1, 1,  X->getBatchSize());
+
+  return this->activatedInputs;
 }
 
-std::shared_ptr<Matrix<double>> FlattenLayer::backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives) {
+std::shared_ptr<Matrix<double>> FlattenLayer::backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives, int numOfThreads) {
   forwardDerivatives->reshape(this->cachedNumOfRows, this->cachedNumOfCols, this->cachedDepth, batchSize);
-  return forwardDerivatives;
+  this->neuronDerivatives = MatrixDoubleSharedPtr(forwardDerivatives->copy());
+  this->neuronDerivatives->reshape(this->cachedNumOfRows, this->cachedNumOfCols, this->cachedDepth, batchSize);
+  return this->neuronDerivatives;
 }
 
 std::shared_ptr<Matrix<double>> FlattenLayer::activate(std::shared_ptr<Matrix<double>> &X) {
   return X;
-}
-
-bool FlattenLayer::hasWeights() {
-  return false;
-}
-
-bool FlattenLayer::hasBiases() {
-  return false;
 }

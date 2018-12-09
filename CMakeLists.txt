@@ -60,7 +60,11 @@ set(NN_SOURCES
         layers/FlattenLayer.h
         layers/MaxPool2DLayer.cpp
         layers/MaxPool2DLayer.h
-        layers/BatchNormalization.cpp layers/BatchNormalization.h neural_network/GraphBuilder.cpp neural_network/GraphBuilder.h)
+        layers/BatchNormalization.cpp
+        layers/BatchNormalization.h
+        neural_network/GraphBuilder.cpp
+        neural_network/GraphBuilder.h
+        )
 
 set(SOURCES
         tests/matrix_tests.cpp

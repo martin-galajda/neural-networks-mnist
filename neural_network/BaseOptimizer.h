@@ -18,7 +18,8 @@ public:
         std::vector<std::shared_ptr<Matrix<double>>> &labels,
         std::vector<int> &trainIndices,
         int minibatchSize,
-        double learningRate
+        double learningRate,
+        int numOfThreads = 1
     );
 
     void setLearningRate(double learningRate) { this->learningRate = learningRate; }
@@ -43,6 +44,7 @@ protected:
     double learningRate;
     double movingAverageAcc = 0;
     double movingAverageAccCount = 0;
+    int numOfThreads;
 
     void populatePlaceholdersForMinibatch();
 };

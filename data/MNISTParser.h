@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "../matrix_impl/Matrix.hpp"
+#include "Matrix.hpp"
 
 #ifndef MATRIXBENCHMARKS_MNISTPARSER_H
 #define MATRIXBENCHMARKS_MNISTPARSER_H

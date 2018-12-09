@@ -3,7 +3,7 @@
 //
 
 #include "gtest/gtest.h"
-#include "../data/MNISTParser.h"
+#include "MNISTParser.h"
 
 
 TEST(mnistParserTests, trainingData)

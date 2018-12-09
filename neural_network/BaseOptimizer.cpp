@@ -12,8 +12,9 @@ BaseOptimizer::BaseOptimizer(
         std::vector<std::shared_ptr<Matrix<double>>> &labels,
         std::vector<int> &trainIndices,
         int minibatchSize,
-        double learningRate
-        ): computationalGraph(computationalGraph), minibatchSize(minibatchSize), instances(instances), labels(labels), trainIndices(trainIndices) {
+        double learningRate,
+        int numOfThreads
+        ): computationalGraph(computationalGraph), minibatchSize(minibatchSize), instances(instances), labels(labels), trainIndices(trainIndices), numOfThreads(numOfThreads) {
 
     std::random_device randomDevice;     // only used once to initialise (seed) engine
     std::mt19937 rng(randomDevice());    // random-number engine used (Mersenne-Twister in this case)

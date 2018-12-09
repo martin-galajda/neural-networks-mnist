@@ -13,6 +13,25 @@
 #include <vector>
 #include <memory>
 
+
+namespace DenseLayerUtils {
+  struct PerformDenseLayerBackpropPayload {
+    int threadId;
+    ActivationFunction *activationFunctionPtr;
+    Matrix<double> *outDerivativesPtr;
+    Matrix<double> *neuronDerivativesPtr;
+    Matrix<double> *weightDerivativesPtr;
+    Matrix<double> *activatedInputsPtr;
+    Matrix<double> *inputsPtr;
+    Matrix<double> *weightsPtr;
+    Matrix<double> *biasesDerivativesPtr;
+  };
+
+  void PerformDenseLayerBackpropagation(DenseLayerUtils::PerformDenseLayerBackpropPayload *payload);
+}
+
+
+
 class DenseLayer: public BaseLayer {
 public:
   DenseLayer(int width, int height, int batchSize, double *data, ActivationFunction activationFunction);
@@ -29,7 +48,7 @@ public:
 
   virtual std::shared_ptr<Matrix<double>> forwardPropagate(std::shared_ptr<Matrix<double>> X);
   virtual std::shared_ptr<Matrix<double>> activate(std::shared_ptr<Matrix<double>> &X);
-  virtual std::shared_ptr<Matrix<double>> backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives);
+  virtual std::shared_ptr<Matrix<double>> backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives, int numOfThreads);
 
   virtual bool hasBiases();
   virtual bool hasWeights();

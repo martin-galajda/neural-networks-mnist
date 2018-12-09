@@ -63,7 +63,7 @@ std::shared_ptr<Matrix<double>> MaxPool2DLayer::forwardPropagate(std::shared_ptr
   return output;
 }
 
-std::shared_ptr<Matrix<double>> MaxPool2DLayer::backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives) {
+std::shared_ptr<Matrix<double>> MaxPool2DLayer::backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives, int numOfThreads) {
   this->inputs->setAllElementsZero();
 
   for (auto b = 0; b < forwardDerivatives->getBatchSize(); b++) {

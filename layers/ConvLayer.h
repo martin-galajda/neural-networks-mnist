@@ -7,6 +7,23 @@
 
 #include "BaseLayer.h"
 
+namespace ConvLayerUtils {
+  struct PerformConvLayerBackpropPayload {
+    int thread_id;
+    ActivationFunction *activationFunctionPtr;
+    Matrix<double> *outDerivativesPtr;
+    Matrix<double> *neuronDerivativesPtr;
+    Matrix<double> *weightDerivativesPtr;
+    Matrix<double> *activateInputsPtr;
+    Matrix<double> *inputsPtr;
+    Matrix<double> *weightsPtr;
+    int *stridePtr;
+  };
+
+  void PerformConvLayerBackPropagation(PerformConvLayerBackpropPayload *payload);
+}
+
+
 class ConvLayer: public BaseLayer {
 
 public:
@@ -37,12 +54,12 @@ public:
 
     virtual std::shared_ptr<Matrix<double>> forwardPropagate(std::shared_ptr<Matrix<double>> X);
     virtual std::shared_ptr<Matrix<double>> activate(std::shared_ptr<Matrix<double>> &X);
-    virtual std::shared_ptr<Matrix<double>> backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives);
+    virtual std::shared_ptr<Matrix<double>> backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives, int numOfThreads);
 
     virtual int getLayerOutputDepth() { return this->numberOfFilters; }
 
-    virtual bool hasBiases();
-    virtual bool hasWeights();
+    virtual bool hasBiases() { return false; }
+    virtual bool hasWeights() { return true; }
 
 protected:
     int stride;

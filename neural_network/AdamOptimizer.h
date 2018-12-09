@@ -16,7 +16,10 @@ public:
             std::vector<std::shared_ptr<Matrix<double>>> &labels,
             std::vector<int> &trainIndices,
             int minibatchSize,
-            double learningRate
+            double learningRate,
+            int numOfThreads = 1,
+            int epochSize = 50000,
+            int reportEveryBatch = 12
     );
 
     virtual void train();
@@ -24,21 +27,24 @@ public:
     void initialize();
 protected:
 
-    double beta1 = 0.9;
-    double beta2 = 0.999;
+  double beta1 = 0.9;
+  double beta2 = 0.999;
+  double epsilon = 1e-8;
 
-    double epsilon = 1e-8;
+  double timestep = 0;
+  double epsilonCorrection = 1e-8;
 
-    double timestep = 0;
-    double epsilonCorrection = 1e-8;
+  int epochSize;
+  int reportEveryBatch;
 
-    std::vector<std::shared_ptr<Matrix<double>>> gradientAverages;
-    std::vector<std::shared_ptr<Matrix<double>>> squaredGradientAverages;
+  std::vector<std::shared_ptr<Matrix<double>>> gradientAverages;
+  std::vector<std::shared_ptr<Matrix<double>>> squaredGradientAverages;
 
-    std::vector<std::shared_ptr<Matrix<double>>> gradientAveragesBiases;
-    std::vector<std::shared_ptr<Matrix<double>>> squaredGradientAveragesBiases;
+  std::vector<std::shared_ptr<Matrix<double>>> gradientAveragesBiases;
+  std::vector<std::shared_ptr<Matrix<double>>> squaredGradientAveragesBiases;
 
-    bool isInitialized = false;
+  bool isInitialized = false;
+
 };
 
 

@@ -82,7 +82,7 @@ std::shared_ptr<Matrix<double>> BatchNormalization::forwardPropagate(std::shared
   return this->activatedInputs;
 }
 
-std::shared_ptr<Matrix<double>> BatchNormalization::backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives) {
+std::shared_ptr<Matrix<double>> BatchNormalization::backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives, int numOfThreads) {
 
 
 }

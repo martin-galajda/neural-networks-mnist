@@ -11,6 +11,59 @@
 #include <stdexcept>
 #include <iomanip>
 #include "../initializers/XavierInitializer.h"
+#include <thread>
+
+namespace DenseLayerUtils {
+  void PerformDenseLayerBackpropagation(PerformDenseLayerBackpropPayload *payload){
+    Matrix<double> &forwardDerivatives = *payload->outDerivativesPtr;
+
+    Matrix<double> &weightDerivatives = *(payload->weightDerivativesPtr);
+    Matrix<double> &neuronDerivatives = *(payload->neuronDerivativesPtr);
+    Matrix<double> *inputs = payload->inputsPtr;
+    Matrix<double> *activatedInputs = payload->activatedInputsPtr;
+    Matrix<double> *weights = payload->weightsPtr;
+    Matrix<double> *biasesDerivatives = payload->biasesDerivativesPtr;
+
+    auto activationFunction = *payload->activationFunctionPtr;
+
+    // each column contains derivatives for one training example
+    for (int instanceIndex = 0; instanceIndex < forwardDerivatives.getBatchSize(); instanceIndex++) {
+      for (int neuronIndex = 0; neuronIndex < (*inputs).getNumOfRows(); neuronIndex++) {
+        for (int forwardDerivativeIndex = 0; forwardDerivativeIndex < forwardDerivatives.getNumOfRows(); forwardDerivativeIndex++) {
+
+          auto currForwardDerivativeValue = *forwardDerivatives(forwardDerivativeIndex, 0,0, instanceIndex);
+          auto currActivatedInputValue = *(*activatedInputs)(forwardDerivativeIndex, 0,0, instanceIndex);
+
+          if (activationFunction == ActivationFunction::relu) {
+            double reluDerivative = 0.0;
+            if (currActivatedInputValue > 0) {
+              reluDerivative = 1.0;
+            }
+            // we need to include relu derivative
+            *(weightDerivatives)(forwardDerivativeIndex, neuronIndex, 0, 0) +=
+              *(*inputs)(neuronIndex,0,0, instanceIndex) * reluDerivative * currForwardDerivativeValue;
+
+            *(neuronDerivatives)(neuronIndex, 0, 0, instanceIndex) +=
+              *(*weights)(forwardDerivativeIndex, neuronIndex, 0, 0) * reluDerivative * currForwardDerivativeValue;
+
+            // TODO CHECK!!!
+            (*biasesDerivatives)[forwardDerivativeIndex][0] += (currForwardDerivativeValue * reluDerivative) / (*inputs).getNumOfRows();
+          } else {
+            // TODO: As of now we support only softmax (in the last layer used with cross-entropy) and relu
+            // softmax derivative already has derivative of activation function passed
+            (weightDerivatives)[forwardDerivativeIndex][neuronIndex] += *(*inputs)(neuronIndex, 0,0,instanceIndex) * currForwardDerivativeValue;
+            *(neuronDerivatives)(neuronIndex, 0, 0, instanceIndex) += *(*weights)(forwardDerivativeIndex, neuronIndex, 0, 0) * currForwardDerivativeValue;
+
+            // TODO CHECK!!!
+            (*biasesDerivatives)[forwardDerivativeIndex][0] += (currForwardDerivativeValue) / (*inputs).getNumOfRows();
+          }
+        }
+      }
+    };
+  }
+}
+
+
 
 DenseLayer::~DenseLayer() {}
 
@@ -76,6 +129,7 @@ std::shared_ptr<Matrix<double>> DenseLayer::forwardPropagate(std::shared_ptr<Mat
   if (!this->isInitialized) {
     this->initialize(X);
   }
+  auto t_start = std::chrono::high_resolution_clock::now();
 
   this->inputs = X;
 
@@ -91,68 +145,89 @@ std::shared_ptr<Matrix<double>> DenseLayer::forwardPropagate(std::shared_ptr<Mat
   auto activatedInputs = this->activate(A);
   this->activatedInputs = activatedInputs;
 
+  double secondsPassed = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - t_start).count();
+
+//  std::cout << this->name << "computing forward prop: " << secondsPassed << std::endl;
+
   return activatedInputs;
 }
 
+std::shared_ptr<Matrix<double>> DenseLayer::backPropagate(std::shared_ptr<Matrix<double>> forwardDerivativesPtr, int numOfThreads) {
+  auto t_start = std::chrono::high_resolution_clock::now();
 
-std::shared_ptr<Matrix<double>> DenseLayer::backPropagate(std::shared_ptr<Matrix<double>> forwardDerivativesPtr) {
-    this->neuronDerivatives->reshape(inputs->getNumOfRows(),1,1, batchSize);
+  this->neuronDerivatives->reshape(inputs->getNumOfRows(),1,1, batchSize);
+  Matrix<double> &forwardDerivatives = *forwardDerivativesPtr;
 
-    Matrix<double> &forwardDerivatives = *forwardDerivativesPtr;
+  if (forwardDerivatives.getBatchSize() != this->batchSize) {
+      std::stringstream errorString;
+      errorString << "Got invalid number of columns for forward derivatives. Expected:  "
+          << this->batchSize
+          << " but I got "
+          << forwardDerivatives.getBatchSize()
+          << std::endl;
 
-    if (forwardDerivatives.getBatchSize() != this->batchSize) {
-        std::stringstream errorString;
-        errorString << "Got invalid number of columns for forward derivatives. Expected:  "
-            << this->batchSize
-            << " but I got "
-            << forwardDerivatives.getBatchSize()
-            << std::endl;
+      throw std::invalid_argument(errorString.str());
+  }
 
-        throw std::invalid_argument(errorString.str());
-    }
+  Matrix<double> &weightDerivatives = *(this->weightsDerivatives);
+  Matrix<double> &neuronDerivatives = *(this->neuronDerivatives);
 
-    Matrix<double> &weightDerivatives = *(this->weightsDerivatives);
-    Matrix<double> &neuronDerivatives = *(this->neuronDerivatives);
+  weightDerivatives.setAllElementsZero();
+  biasesDerivatives->setAllElementsZero();
+  neuronDerivatives.setAllElementsZero();
 
-    weightDerivatives.setAllElementsZero();
-    biasesDerivatives->setAllElementsZero();
-    neuronDerivatives.setAllElementsZero();
 
-    // each column contains derivatives for one training example
-    for (int instanceIndex = 0; instanceIndex < forwardDerivatives.getBatchSize(); instanceIndex++) {
-        for (int neuronIndex = 0; neuronIndex < (*inputs).getNumOfRows(); neuronIndex++) {
-            for (int forwardDerivativeIndex = 0; forwardDerivativeIndex < forwardDerivatives.getNumOfRows(); forwardDerivativeIndex++) {
+  std::thread *threads[numOfThreads];
+  struct DenseLayerUtils::PerformDenseLayerBackpropPayload dataForJob[numOfThreads];
 
-                auto currForwardDerivativeValue = *forwardDerivatives(forwardDerivativeIndex, 0,0, instanceIndex);
-                auto currActivatedInputValue = *(*activatedInputs)(forwardDerivativeIndex, 0,0, instanceIndex);
+  // integer divison with ceiling up ...
+  auto threadBatchSize = batchSize % numOfThreads ? (batchSize / numOfThreads) + 1 : batchSize / numOfThreads;
 
-                if (this->activationFunction == ActivationFunction::relu) {
-                    double reluDerivative = 0.0;
-                    if (currActivatedInputValue > 0) {
-                        reluDerivative = 1.0;
-                    }
-                    // we need to include relu derivative
-                    *(weightDerivatives)(forwardDerivativeIndex, neuronIndex, 0, 0) +=
-                      *(*inputs)(neuronIndex,0,0, instanceIndex) * reluDerivative * currForwardDerivativeValue;
+  auto outRows = forwardDerivatives.getNumOfRows();
+  auto outCols = forwardDerivatives.getNumOfCols();
+  auto outDepth = forwardDerivatives.getDepth();
 
-                    *(neuronDerivatives)(neuronIndex, 0, 0, instanceIndex) +=
-                            *(*weights)(forwardDerivativeIndex, neuronIndex, 0, 0) * reluDerivative * currForwardDerivativeValue;
+  auto inRows = inputs->getNumOfRows();
+  auto inCols = inputs->getNumOfCols();
+  auto inDepth = inputs->getDepth();
 
-                    // TODO CHECK!!!
-                    (*biasesDerivatives)[forwardDerivativeIndex][0] += (currForwardDerivativeValue * reluDerivative) / (*inputs).getNumOfRows();
-                } else {
-                    // TODO: As of now we support only softmax (in the last layer used with cross-entropy) and relu
-                    // softmax derivative already has derivative of activation function passed
-                    (weightDerivatives)[forwardDerivativeIndex][neuronIndex] += *(*inputs)(neuronIndex, 0,0,instanceIndex) * currForwardDerivativeValue;
-                    *(neuronDerivatives)(neuronIndex, 0, 0, instanceIndex) += *(*weights)(forwardDerivativeIndex, neuronIndex, 0, 0) * currForwardDerivativeValue;
+  auto samplesToProcess = batchSize;
 
-                  // TODO CHECK!!!
-                  (*biasesDerivatives)[forwardDerivativeIndex][0] += (currForwardDerivativeValue) / (*inputs).getNumOfRows();
-                }
-            }
-        }
-    };
+  for (int i = 0; i < numOfThreads; i++) {
+    auto jobBatchSize = std::min(samplesToProcess, threadBatchSize);
 
+    auto jobOutDerivatives = new MatrixDouble((forwardDerivatives)(0, 0, 0, threadBatchSize * i), outRows, outCols, false, outDepth, jobBatchSize);
+    auto jobActivatedInputsPtr = new MatrixDouble((*activatedInputs)(0, 0, 0, threadBatchSize * i), outRows, outCols, false, outDepth, jobBatchSize);
+
+    auto jobInputsPtr = new MatrixDouble((*inputs)(0, 0, 0, threadBatchSize * i), inRows, inCols, false, inDepth, jobBatchSize);
+    auto jobInputDerivatives = new MatrixDouble((neuronDerivatives)(0, 0, 0, threadBatchSize * i), inRows, inCols, false, inDepth, jobBatchSize);
+
+    dataForJob[i].threadId = i;
+
+    dataForJob[i].activatedInputsPtr = jobActivatedInputsPtr;
+    dataForJob[i].inputsPtr = jobInputsPtr;
+    dataForJob[i].outDerivativesPtr = jobOutDerivatives;
+    dataForJob[i].neuronDerivativesPtr = jobInputDerivatives;
+    dataForJob[i].activationFunctionPtr = &activationFunction;
+
+    auto jobWeightsDerivatives = weightsDerivatives.get();
+    auto jobWeightsPtr = weights.get();
+    dataForJob[i].weightsPtr = jobWeightsPtr;
+    dataForJob[i].weightDerivativesPtr = jobWeightsDerivatives;
+
+    auto biasesDerivatives = this->biasesDerivatives.get();
+    dataForJob[i].biasesDerivativesPtr = biasesDerivatives;
+
+    threads[i] = new std::thread(DenseLayerUtils::PerformDenseLayerBackpropagation, &dataForJob[i]);
+
+    samplesToProcess -= jobBatchSize;
+  }
+
+  for (int i = 0; i < numOfThreads; i++ ) {
+    threads[i]->join();
+
+    free(threads[i]);
+  }
 
   return this->neuronDerivatives;
 }

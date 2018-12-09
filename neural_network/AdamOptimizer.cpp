@@ -24,10 +24,16 @@ void AdamOptimizer::train() {
     this->movingAverageAcc = newMovingAccuracy;
 
     auto processedCount = this->movingAverageAccCount * this->minibatchSize;
-    auto ONE_EPOCH = 50000;
 
-    std::cout << "\r" << "Processed: (" << processedCount << "/" << ONE_EPOCH << "). " << "Moving cumulative mean accuracy: " << this->movingAverageAcc << std::flush;
-    if ((int) processedCount > ONE_EPOCH) {
+    if ((int) this->movingAverageAccCount % this->reportEveryBatch == 0) {
+        std::cout
+            << "\r"
+            << "Processed: (" << processedCount
+            << "/" << this->epochSize << "). "
+            << "Moving cumulative mean accuracy: " << this->movingAverageAcc << std::flush;
+    }
+
+    if ((int) processedCount > epochSize) {
         this->movingAverageAccCount = 1;
         this->movingAverageAcc = batchAccuracy;
     }
@@ -36,7 +42,7 @@ void AdamOptimizer::train() {
     // we can mutate softmax outputs as we are using it just for computing derivatives...
     auto lossDerivatives = MatrixDoubleSharedPtr(*s - (*expectedOutputsPlaceholder));
 
-    computationalGraph.backwardPass(lossDerivatives);
+    computationalGraph.backwardPass(lossDerivatives, numOfThreads);
 
     timestep += 1;
 
@@ -123,11 +129,19 @@ void AdamOptimizer::train() {
 }
 
 AdamOptimizer::AdamOptimizer(ComputationalGraph &computationalGraph,
-                                     std::vector<std::shared_ptr<Matrix<double>>> &instances,
-                                     std::vector<std::shared_ptr<Matrix<double>>> &labels,
-                                     std::vector<int> &trainIndices, int minibatchSize, double learningRate):
-
-        BaseOptimizer(computationalGraph, instances, labels, trainIndices, minibatchSize, learningRate) {
+    std::vector<std::shared_ptr<Matrix<double>>> &instances,
+    std::vector<std::shared_ptr<Matrix<double>>> &labels,
+    std::vector<int> &trainIndices,
+    int minibatchSize,
+    double learningRate,
+    int numOfThreads,
+    int epochSize,
+    int reportEveryBatch
+    ):
+        BaseOptimizer(computationalGraph, instances, labels, trainIndices, minibatchSize, learningRate, numOfThreads),
+        epochSize(epochSize),
+        reportEveryBatch(reportEveryBatch)
+    {
 }
 
 void AdamOptimizer::initialize() {
@@ -136,7 +150,8 @@ void AdamOptimizer::initialize() {
     ZeroInitializer zeroInitializer;
 
     for (auto layerIt = layers.begin(); layerIt != layers.end(); layerIt++) {
-        if ((*layerIt)->hasWeights()) {
+        auto &layer = *layerIt;
+        if (layer->hasWeights()) {
             auto batchSize = (*layerIt)->getBatchSize();
             auto layerWidth = (*layerIt)->getWidth();
             auto layerHeight = (*layerIt)->getHeight();
@@ -149,7 +164,7 @@ void AdamOptimizer::initialize() {
             this->squaredGradientAverages.push_back(layerSquaredGradientAverages);
         }
 
-        if ((*layerIt)->hasBiases()) {
+        if (layer->hasBiases()) {
             auto layerHeight = (*layerIt)->getHeight();
 
             auto layerSquaredGradientAveragesBiases = std::shared_ptr<Matrix<double>>(new Matrix<double>(layerHeight, 1, &zeroInitializer));

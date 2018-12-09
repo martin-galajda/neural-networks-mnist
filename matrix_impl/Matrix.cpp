@@ -936,5 +936,4 @@ T Matrix<T>::crossEntropyLoss(Matrix<T> *true_values) {
 
     return loss;
 }
-
 template class Matrix<double>;

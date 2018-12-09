@@ -24,7 +24,7 @@ public:
 
     virtual std::shared_ptr<Matrix<double>> forwardPropagate(std::shared_ptr<Matrix<double>> X) = 0;
     virtual std::shared_ptr<Matrix<double>> activate(std::shared_ptr<Matrix<double>> &X) = 0;
-    virtual std::shared_ptr<Matrix<double>> backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives) = 0;
+    virtual std::shared_ptr<Matrix<double>> backPropagate(std::shared_ptr<Matrix<double>> forwardDerivatives, int numOfThreads) = 0;
 
     void updateWeights();
 

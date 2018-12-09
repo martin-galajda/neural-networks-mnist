@@ -37,7 +37,7 @@ public:
 
     std::shared_ptr<Matrix<double>> forwardPass(std::shared_ptr<Matrix<double>> input);
 
-    MatrixDoubleSharedPtr backwardPass(std::shared_ptr<Matrix<double>> lossDerivatives);
+    MatrixDoubleSharedPtr backwardPass(std::shared_ptr<Matrix<double>> lossDerivatives, int numOfThreads = 1);
 
     int getInputSizeRows() { return this->inputSizeRows; }
     int getInputSizeCols() { return this->inputSizeCols; }
@@ -46,12 +46,12 @@ public:
     void learn();
     void learn(double);
 
-    std::list<BaseLayer *> &getLayers() { return layers; }
+    std::vector<BaseLayer *> &getLayers() { return layers; }
 protected:
     int inputSizeRows = 0;
     int inputSizeCols = 0;
     int outputSize = 0;
-    std::list<BaseLayer *> layers;
+    std::vector<BaseLayer *> layers;
 };
 
 

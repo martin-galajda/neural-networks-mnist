@@ -4,7 +4,7 @@
 
 #include "gtest/gtest.h"
 #include "../matrix_impl/Matrix.hpp"
-#include "../data/MNISTParser.h"
+#include "MNISTParser.h"
 #include "../neural_network/ComputationalGraph.h"
 #include "../utilities/split_to_test_and_validation.tpp"
 #include "../utilities/populate_placeholders.h"

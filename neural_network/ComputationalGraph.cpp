@@ -7,7 +7,7 @@
 #include "../layers/ConvLayer.h"
 
 ComputationalGraph::ComputationalGraph() {
-    std::list<BaseLayer *> layers;
+    std::vector<BaseLayer *> layers;
     this->layers = layers;
 }
 
@@ -81,20 +81,24 @@ void ComputationalGraph::addConvLayer(
 
 std::shared_ptr<Matrix<double>> ComputationalGraph::forwardPass(std::shared_ptr<Matrix<double>> input) {
     auto &lastOutput = input;
-    for (auto layerIt = this->layers.begin(); layerIt != this->layers.end(); layerIt++) {
-        lastOutput = (*layerIt)->forwardPropagate(lastOutput);
-    }
 
+    for (auto layerIt = this->layers.begin(); layerIt != this->layers.end(); layerIt++) {
+        auto &currLayer = *layerIt;
+        lastOutput = currLayer->forwardPropagate(lastOutput);
+    }
 
     return lastOutput;
 }
 
-MatrixDoubleSharedPtr ComputationalGraph::backwardPass(std::shared_ptr<Matrix<double>> lossDerivatives){
+MatrixDoubleSharedPtr ComputationalGraph::backwardPass(std::shared_ptr<Matrix<double>> lossDerivatives, int numOfThreads){
     std::shared_ptr<Matrix<double>> &lastDerivatives = lossDerivatives;
 
+    auto idx = layers.size();
     for (auto layerIt = this->layers.rbegin(); layerIt != this->layers.rend(); layerIt++) {
-        lastDerivatives = (*layerIt)->backPropagate(lastDerivatives);
+      auto &currLayer = *layerIt;
+      lastDerivatives = currLayer->backPropagate(lastDerivatives, numOfThreads);
     }
+
 
     return lastDerivatives;
 }

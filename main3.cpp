@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include "matrix_impl/Matrix.hpp"
-#include "data/MNISTParser.h"
+#include "MNISTParser.h"
 #include "neural_network/ComputationalGraph.h"
 #include "utilities/split_to_test_and_validation.tpp"
 #include "utilities/populate_placeholders.h"
@@ -105,6 +105,7 @@ std::shared_ptr<ComputationalGraph> performTraining(
 //  BaseInitializer *initializer;
 
   auto INPUT_SIZE = 28 * 28;
+  auto NUM_OF_THREADS = 8;
   auto OUTPUT_SIZE = 10;
 
   auto computationalGraphPtr = std::shared_ptr<ComputationalGraph>(new ComputationalGraph(28, 28, OUTPUT_SIZE));
@@ -124,29 +125,33 @@ std::shared_ptr<ComputationalGraph> performTraining(
 
   computationalGraph.addConvLayer(WIDTH_CONV_1, WIDTH_CONV_1, STRIDE_CONV_1, FILTERS_CONV_1, BATCH_SIZE, ActivationFunction::relu, "ConvLayer1");
   computationalGraph.addConvLayer(WIDTH_CONV_2, WIDTH_CONV_2, STRIDE_CONV_2, FILTERS_CONV_2, BATCH_SIZE, ActivationFunction::relu, "ConvLayer2");
+//  computationalGraph.addConvLayer(3, 3, 3, 4, BATCH_SIZE, ActivationFunction::relu, "ConvLayer3");
 
-  auto MAX_POOL_1_WIDTH = 2;
-  auto MAX_POOL_1_HEIGHT = 2;
-  auto MAX_POOL_1_STRIDE = 2;
+  auto MAX_POOL_1_WIDTH = 3;
+  auto MAX_POOL_1_HEIGHT = 3;
+  auto MAX_POOL_1_STRIDE = 3;
   auto maxPool1 = new MaxPool2DLayer(MAX_POOL_1_WIDTH, MAX_POOL_1_HEIGHT, MAX_POOL_1_STRIDE, "MaxPool1");
   computationalGraph.addLayer(maxPool1);
 
   computationalGraph.addLayer(new FlattenLayer(BATCH_SIZE));
 
-  auto DENSE_LAYER_UNITS = 128;
-  computationalGraph.addDenseLayer(DENSE_LAYER_UNITS, BATCH_SIZE, ActivationFunction::relu, "DenseLayer1");
+  auto DENSE_LAYER_UNITS = 64;
+  computationalGraph.addDenseLayer(128, BATCH_SIZE, ActivationFunction::relu, "DenseLayer1");
+  computationalGraph.addDenseLayer(64, BATCH_SIZE, ActivationFunction::relu, "DenseLayer2");
   computationalGraph.addDenseLayer(10, BATCH_SIZE, ActivationFunction::softmax, "OutputLayer");
 
 
 //  BaseOptimizer *optimizerPtr;
-  auto optimizerPtr = new AdamOptimizer(computationalGraph, all_instances, all_labels, training_indices, BATCH_SIZE, 0.001);
+  auto optimizerPtr = new AdamOptimizer(computationalGraph, all_instances, all_labels, training_indices, BATCH_SIZE, 0.001, NUM_OF_THREADS);
 //  auto optimizerPtr = new MomentumOptimizer(computationalGraph, all_instances, all_labels, training_indices, BATCH_SIZE, 0.01);
 //  auto optimizerPtr = new MiniBatchOptimizer(*computationalGraphPtr, all_instances, all_labels, training_indices, BATCH_SIZE, 0.001);
 
   auto &optimizer = *optimizerPtr;
 
-  for (batch = 0; secondsPassed < (60 * 28); batch++) {
+  for (batch = 0; secondsPassed < (60 * 30); batch++) {
     optimizerPtr->train();
+
+    secondsPassed = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - t_start).count();
   }
 
 
@@ -201,7 +206,7 @@ std::shared_ptr<ComputationalGraph> performTraining(
 
 int main(int argc, const char** argv) {
   // get training data
-  MNISTParser parser("../data/mnist_train_vectors.csv", "../data/mnist_train_labels.csv");
+  MNISTParser parser("./data/mnist_train_vectors.csv", "./data/mnist_train_labels.csv");
   auto all_instances = parser.parseToMatrices();
   auto all_labels = parser.parseLabelsToOneHotEncodedVectors();
 
@@ -210,7 +215,7 @@ int main(int argc, const char** argv) {
   std::vector<int> validation_indices = indices["validation"];
   std::vector<int> training_indices = indices["training"];
 
-  MNISTParser testDataParser("../data/mnist_test_vectors.csv", "../data/mnist_test_labels.csv");
+  MNISTParser testDataParser("./data/mnist_test_vectors.csv", "./data/mnist_test_labels.csv");
   auto all_test_instances = testDataParser.parseToMatrices();
   auto all_test_labels = testDataParser.parseLabelsToOneHotEncodedVectors();
   std::vector<int> test_indices(all_test_instances.size());
