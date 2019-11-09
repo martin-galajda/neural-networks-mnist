@@ -1,7 +1,5 @@
 # Neural networks - MNIST
 
-⚠️ Still under construction ⚠️
-
 This is implementation of neural networks for solving MNIST dataset in C++ without use of any deep learning framework (or library for performing efficient matrix operations).
 
 
