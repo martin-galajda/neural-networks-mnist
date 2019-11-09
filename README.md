@@ -1,6 +1,6 @@
 # Neural networks - MNIST
 
-This is implementation of neural networks for solving MNIST dataset in C++ without use of any deep learning framework (or library for performing efficient matrix operations).
+This is an implementation of convolutional neural networks for solving MNIST dataset in C++ without use of any deep learning framework (or library for performing efficient matrix operations).
 
 
 # Goal
